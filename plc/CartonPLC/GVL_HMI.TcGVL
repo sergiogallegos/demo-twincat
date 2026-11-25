@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.53">
+  <GVL Name="GVL_HMI" Id="{52592E20-A431-4FDA-93CC-000000000004}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+VAR_GLOBAL
+    // One atomic DINT per request. See docs/ads.md for the word layout.
+    Request : DINT;
+    Status : ARRAY[0..19] OF DINT;
+END_VAR]]></Declaration>
+
+  </GVL>
+</TcPlcObject>

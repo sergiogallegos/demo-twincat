@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.53">
+  <POU Name="FB_VirtualCylinder" Id="{52592E20-A431-4FDA-93CC-000000000007}">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_VirtualCylinder
+VAR_OUTPUT
+    Position : DINT; // 0 = home, 100 = forward limit
+END_VAR]]></Declaration>
+    <Implementation><ST><![CDATA[]]></ST></Implementation>
+    <Method Name="Move" Id="{52592E20-A431-4FDA-93CC-000000000005}">
+      <Declaration><![CDATA[METHOD Move
+VAR_INPUT
+    Forward : BOOL;
+END_VAR]]></Declaration>
+      <Implementation><ST><![CDATA[IF Forward THEN
+    Position := MIN(100, Position + 1);
+ELSE
+    Position := MAX(0, Position - 1);
+END_IF]]></ST></Implementation>
+    </Method>
+    <Method Name="Home" Id="{52592E20-A431-4FDA-93CC-000000000006}">
+      <Declaration><![CDATA[METHOD Home]]></Declaration>
+      <Implementation><ST><![CDATA[Position := 0;]]></ST></Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

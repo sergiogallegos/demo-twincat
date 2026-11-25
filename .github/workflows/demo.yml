@@ -1,0 +1,33 @@
+name: Portable carton cell
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  simulator:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: npm --prefix web ci
+      - run: npm --prefix web run check
+      - run: npm --prefix web run build
+      - run: dotnet build server
+      - run: python3 scripts/verify_contract.py
+      - name: Exercise the service and machine
+        shell: bash
+        run: |
+          dotnet run --project server --no-build > "$RUNNER_TEMP/carton.log" 2>&1 &
+          host_pid=$!
+          trap 'kill "$host_pid" 2>/dev/null || true' EXIT
+          for i in {1..50}; do
+            if curl -fsS http://127.0.0.1:5080/api/machine > /dev/null; then break; fi
+            sleep 0.2
+          done
+          python3 scripts/smoke.py

@@ -1,0 +1,26 @@
+node_modules/
+dist/
+bin/
+obj/
+.vs/
+*.tsproj.bak
+*.plcproj.bak
+*.suo
+*.user
+*.tmc
+_Boot/
+_CompileInfo/
+_Libraries/
+_Deployment/
+*.blend1
+*.FCBak
+__pycache__/
+server/wwwroot/
+
+# Locally acquired vendor drawings, native sample downloads and converted meshes
+cad/vendor/
+web/public/vendor/
+labs/downloads/
+
+# Portable delivery artifact when a remote is unavailable
+*.bundle

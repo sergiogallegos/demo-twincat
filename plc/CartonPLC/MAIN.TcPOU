@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.53">
+  <POU Name="MAIN" Id="{52592E20-A431-4FDA-93CC-000000000027}">
+    <Declaration><![CDATA[PROGRAM MAIN
+VAR
+    Cell : FB_CartonCell := (Name := 'Carton Cell');
+END_VAR]]></Declaration>
+    <Implementation><ST><![CDATA[Cell.CyclicLogic();]]></ST></Implementation>
+
+  </POU>
+</TcPlcObject>

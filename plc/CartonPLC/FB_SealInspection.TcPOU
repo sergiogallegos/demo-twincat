@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1"><POU Name="FB_SealInspection" Id="{69468DC3-8A7A-45D7-9465-000000000004}">
+  <Declaration><![CDATA[FUNCTION_BLOCK FB_SealInspection
+VAR_OUTPUT
+    Verdict : DINT; // 0 pending, 1 pass, 2 reject
+    BrightSamples : DINT;
+END_VAR
+VAR CONSTANT
+    GoodPixels : ARRAY[0..4] OF USINT := [231, 236, 228, 239, 232];
+    MissingPixels : ARRAY[0..4] OF USINT := [118, 122, 120, 124, 121];
+END_VAR]]></Declaration>
+  <Implementation><ST><![CDATA[]]></ST></Implementation>
+  <Method Name="Inspect" Id="{69468DC3-8A7A-45D7-9465-000000000005}">
+    <Declaration><![CDATA[METHOD Inspect
+VAR_INPUT
+    MissingSeal : BOOL;
+END_VAR
+VAR
+    Index : INT;
+    Pixel : USINT;
+END_VAR]]></Declaration>
+    <Implementation><ST><![CDATA[IF Verdict <> 0 THEN RETURN; END_IF
+FOR Index := 0 TO 4 DO
+    Pixel := SEL(MissingSeal, GoodPixels[Index], MissingPixels[Index]);
+    IF Pixel >= 200 THEN
+        BrightSamples := BrightSamples + 1;
+    END_IF
+END_FOR
+Verdict := SEL(BrightSamples >= 4, 2, 1);]]></ST></Implementation>
+  </Method>
+  <Method Name="ClearResult" Id="{69468DC3-8A7A-45D7-9465-000000000006}">
+    <Declaration><![CDATA[METHOD ClearResult]]></Declaration>
+    <Implementation><ST><![CDATA[Verdict := 0;
+BrightSamples := 0;]]></ST></Implementation>
+  </Method>
+</POU></TcPlcObject>

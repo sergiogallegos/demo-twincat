@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcSmProject TcSmVersion="1.0" TcVersion="3.1.4024.53">
+  <Project ProjectGUID="{52592E20-A431-4FDA-93CC-000000000001}" Target64Bit="true">
+    <System><Tasks><Task Id="3" Priority="20" CycleTime="100000" AmsPort="350" AdtTasks="true"><Name>PlcTask</Name></Task></Tasks></System>
+    <Plc>
+      <Project GUID="{52592E20-A431-4FDA-93CC-000000000002}" Name="CartonPLC" PrjFilePath="CartonPLC\CartonPLC.plcproj" TmcFilePath="CartonPLC\CartonPLC.tmc" ReloadTmc="true" AmsPort="851" CopyTmcToTarget="true" SymbolicMapping="true">
+        <Instance Id="#x08502000" TcSmClass="TComPlcObjDef" TmcPath="CartonPLC\CartonPLC.tmc">
+          <Name>CartonPLC Instance</Name>
+          <CLSID ClassFactory="TcPlc30">{08500001-0000-0000-F000-000000000064}</CLSID>
+          <Contexts><Context><Id>0</Id><Name>PlcTask</Name><ManualConfig><OTCID>#x02010030</OTCID></ManualConfig><Priority>20</Priority><CycleTime>10000000</CycleTime></Context></Contexts>
+          <TaskPouOids><TaskPouOid Prio="20" OTCID="#x08502001" /></TaskPouOids>
+        </Instance>
+      </Project>
+    </Plc>
+  </Project>
+</TcSmProject>

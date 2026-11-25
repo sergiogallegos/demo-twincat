@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.53">
+  <DUT Name="E_ConsoleCommand" Id="{52592E20-A431-4FDA-93CC-000000000003}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+TYPE E_ConsoleCommand :
+(
+    Reset := 1,
+    Start := 2,
+    Hold := 3,
+    Unhold := 4,
+    Suspend := 5,
+    Unsuspend := 6,
+    Stop := 7,
+    Abort := 8,
+    Clear := 9,
+    Automatic := 10,
+    Manual := 11,
+    Stroke1 := 12,
+    Stroke2 := 13,
+    Stroke3 := 14,
+    Stroke4 := 15,
+    Stroke5 := 16,
+    DropAir := 17,
+    RestoreAir := 18,
+    LowBlanks := 19,
+    Refill := 20,
+    MissingSeal := 21,
+    RestoreSeal := 22
+) DINT;
+END_TYPE]]></Declaration>
+
+  </DUT>
+</TcPlcObject>

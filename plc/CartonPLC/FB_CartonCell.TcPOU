@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.53">
+  <POU Name="FB_CartonCell" Id="{52592E20-A431-4FDA-93CC-000000000026}">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_CartonCell EXTENDS SPT_BaseTypes.FB_PackML_BaseModule
+VAR
+    Devices : FB_CellDevices;
+    Stations : ARRAY[1..5] OF FB_StrokeStation;
+    ActiveStation : DINT;
+    Finished : BOOL;
+    Cartons : DINT;
+    AirFault : BOOL;
+    LowStock : BOOL;
+    PreviousState : Tc3_PackML_V2.E_PMLState;
+    ActingScans : INT;
+    RequestSample : DINT;
+    Acknowledged : DINT;
+    Accepted : BOOL;
+    StatusBuffer : ARRAY[0..19] OF DINT;
+END_VAR]]></Declaration>
+    <Implementation><ST><![CDATA[]]></ST></Implementation>
+    <Method Name="Initialize" Id="{52592E20-A431-4FDA-93CC-000000000011}">
+      <Declaration><![CDATA[METHOD PROTECTED Initialize : BOOL]]></Declaration>
+      <Implementation><ST><![CDATA[// User mode 4 keeps Idle and Complete for one-station commissioning.
+CustomModes(eMode := 4, sName := 'Manual stroke', bDisableHeld := TRUE,
+    bDisableSuspended := TRUE, bEnableUnitModeChangeStopped := TRUE);
+Initialize := SUPER^.Initialize();]]></ST></Implementation>
+    </Method>
+    <Method Name="CyclicLogic" Id="{52592E20-A431-4FDA-93CC-000000000012}">
+      <Declaration><![CDATA[METHOD CyclicLogic]]></Declaration>
+      <Implementation><ST><![CDATA[IF NOT _InitComplete THEN
+    _InitComplete := Initialize();
+    RETURN;
+END_IF
+
+IF _CurrentState <> PreviousState THEN
+    ActingScans := 0;
+    PreviousState := _CurrentState;
+ELSE
+    ActingScans := MIN(45, ActingScans + 1);
+END_IF
+
+// Sample once so a concurrent ADS write belongs entirely to one scan.
+RequestSample := GVL_HMI.Request;
+IF RequestSample <> Acknowledged THEN
+    Accepted := ApplyCommand(RequestSample MOD 256);
+    Acknowledged := RequestSample;
+END_IF
+
+SUPER^.CyclicLogic();
+PublishStatus();]]></ST></Implementation>
+    </Method>
+    <Method Name="Execute" Id="{52592E20-A431-4FDA-93CC-000000000013}">
+      <Declaration><![CDATA[METHOD PROTECTED Execute]]></Declaration>
+      <Implementation><ST><![CDATA[IF (ActiveStation < 1) OR (ActiveStation > 5) THEN RETURN; END_IF
+IF Finished THEN
+    StateComplete();
+    RETURN;
+END_IF
+
+Stations[ActiveStation].Step();
+IF _CurrentMode = E_PMLUnitMode.ePMLUnitMode_Production THEN
+    Devices.ProcessStation(ActiveStation, Stations[ActiveStation].Phase);
+END_IF
+
+IF Stations[ActiveStation].Done AND
+   ((_CurrentMode = E_PMLUnitMode.ePMLUnitMode_UserMode1) OR Devices.ReadyToLeave(ActiveStation)) THEN
+    IF (_CurrentMode = E_PMLUnitMode.ePMLUnitMode_UserMode1) OR (ActiveStation = 5) THEN
+        Finished := TRUE;
+        IF _CurrentMode = E_PMLUnitMode.ePMLUnitMode_Production THEN
+            IF Devices.FinishCarton() THEN
+                Cartons := Cartons + 1;
+            END_IF
+        END_IF
+        StateComplete();
+    ELSIF Devices.IndexToNext(ActiveStation) THEN
+        ActiveStation := ActiveStation + 1;
+    END_IF
+END_IF]]></ST></Implementation>
+    </Method>
+    <Method Name="Resetting" Id="{52592E20-A431-4FDA-93CC-000000000014}">
+      <Declaration><![CDATA[METHOD PROTECTED Resetting
+VAR
+    StationIndex : INT;
+END_VAR]]></Declaration>
+      <Implementation><ST><![CDATA[FOR StationIndex := 1 TO 5 DO
+    Stations[StationIndex].ResetStation();
+END_FOR
+Devices.ResetDevices();
+ActiveStation := 0;
+Finished := FALSE;
+IF (_CurrentState = PreviousState) AND (ActingScans >= 45) THEN
+    StateComplete();
+END_IF]]></ST></Implementation>
+    </Method>
+    <Method Name="Clearing" Id="{52592E20-A431-4FDA-93CC-000000000015}">
+      <Declaration><![CDATA[METHOD PROTECTED Clearing]]></Declaration>
+      <Implementation><ST><![CDATA[IF (_CurrentState = PreviousState) AND (ActingScans >= 45) THEN
+    StateComplete();
+END_IF]]></ST></Implementation>
+    </Method>
+    <Method Name="Starting" Id="{52592E20-A431-4FDA-93CC-000000000016}">
+      <Declaration><![CDATA[METHOD PROTECTED Starting]]></Declaration>
+      <Implementation><ST><![CDATA[IF (_CurrentState = PreviousState) AND (ActingScans >= 45) THEN
+    StateComplete();
+END_IF]]></ST></Implementation>
+    </Method>
+    <Method Name="Stopping" Id="{52592E20-A431-4FDA-93CC-000000000017}">
+      <Declaration><![CDATA[METHOD PROTECTED Stopping]]></Declaration>
+      <Implementation><ST><![CDATA[IF (_CurrentState = PreviousState) AND (ActingScans >= 45) THEN
+    StateComplete();
+END_IF]]></ST></Implementation>
+    </Method>
+    <Method Name="Aborting" Id="{52592E20-A431-4FDA-93CC-000000000018}">
+      <Declaration><![CDATA[METHOD PROTECTED Aborting]]></Declaration>
+      <Implementation><ST><![CDATA[IF (_CurrentState = PreviousState) AND (ActingScans >= 45) THEN
+    StateComplete();
+END_IF]]></ST></Implementation>
+    </Method>
+    <Method Name="Holding" Id="{52592E20-A431-4FDA-93CC-000000000019}">
+      <Declaration><![CDATA[METHOD PROTECTED Holding]]></Declaration>
+      <Implementation><ST><![CDATA[IF (_CurrentState = PreviousState) AND (ActingScans >= 45) THEN
+    StateComplete();
+END_IF]]></ST></Implementation>
+    </Method>
+    <Method Name="Unholding" Id="{52592E20-A431-4FDA-93CC-000000000020}">
+      <Declaration><![CDATA[METHOD PROTECTED Unholding]]></Declaration>
+      <Implementation><ST><![CDATA[IF (_CurrentState = PreviousState) AND (ActingScans >= 45) THEN
+    StateComplete();
+END_IF]]></ST></Implementation>
+    </Method>
+    <Method Name="Suspending" Id="{52592E20-A431-4FDA-93CC-000000000021}">
+      <Declaration><![CDATA[METHOD PROTECTED Suspending]]></Declaration>
+      <Implementation><ST><![CDATA[IF (_CurrentState = PreviousState) AND (ActingScans >= 45) THEN
+    StateComplete();
+END_IF]]></ST></Implementation>
+    </Method>
+    <Method Name="Unsuspending" Id="{52592E20-A431-4FDA-93CC-000000000022}">
+      <Declaration><![CDATA[METHOD PROTECTED Unsuspending]]></Declaration>
+      <Implementation><ST><![CDATA[IF (_CurrentState = PreviousState) AND (ActingScans >= 45) THEN
+    StateComplete();
+END_IF]]></ST></Implementation>
+    </Method>
+    <Method Name="Completing" Id="{52592E20-A431-4FDA-93CC-000000000023}">
+      <Declaration><![CDATA[METHOD PROTECTED Completing]]></Declaration>
+      <Implementation><ST><![CDATA[IF (_CurrentState = PreviousState) AND (ActingScans >= 45) THEN
+    StateComplete();
+END_IF]]></ST></Implementation>
+    </Method>
+    <Method Name="ApplyCommand" Id="{52592E20-A431-4FDA-93CC-000000000024}">
+      <Declaration><![CDATA[METHOD PRIVATE ApplyCommand : BOOL
+VAR_INPUT
+    Code : DINT;
+END_VAR
+VAR
+    IsManual : BOOL;
+END_VAR]]></Declaration>
+      <Implementation><ST><![CDATA[IsManual := _CurrentMode = E_PMLUnitMode.ePMLUnitMode_UserMode1;
+CASE Code OF
+    E_ConsoleCommand.Reset:
+        IF NOT AirFault AND ((_CurrentState = Tc3_PackML_V2.E_PMLState.ePMLState_Stopped) OR (_CurrentState = Tc3_PackML_V2.E_PMLState.ePMLState_Complete)) THEN
+            ChangeState(Tc3_PackML_V2.E_PMLCommand.ePMLCommand_Reset);
+            ApplyCommand := TRUE;
+        END_IF
+    E_ConsoleCommand.Start:
+        IF NOT IsManual AND (_CurrentState = Tc3_PackML_V2.E_PMLState.ePMLState_Idle) THEN
+            ActiveStation := 1;
+            ChangeState(Tc3_PackML_V2.E_PMLCommand.ePMLCommand_Start);
+            ApplyCommand := TRUE;
+        END_IF
+    E_ConsoleCommand.Hold:
+        IF NOT IsManual AND (_CurrentState = Tc3_PackML_V2.E_PMLState.ePMLState_Execute) THEN
+            ChangeState(Tc3_PackML_V2.E_PMLCommand.ePMLCommand_Hold);
+            ApplyCommand := TRUE;
+        END_IF
+    E_ConsoleCommand.Unhold:
+        IF _CurrentState = Tc3_PackML_V2.E_PMLState.ePMLState_Held THEN
+            ChangeState(Tc3_PackML_V2.E_PMLCommand.ePMLCommand_Unhold);
+            ApplyCommand := TRUE;
+        END_IF
+    E_ConsoleCommand.Suspend:
+        IF NOT IsManual AND (_CurrentState = Tc3_PackML_V2.E_PMLState.ePMLState_Execute) THEN
+            ChangeState(Tc3_PackML_V2.E_PMLCommand.ePMLCommand_Suspend);
+            ApplyCommand := TRUE;
+        END_IF
+    E_ConsoleCommand.Unsuspend:
+        IF _CurrentState = Tc3_PackML_V2.E_PMLState.ePMLState_Suspended THEN
+            ChangeState(Tc3_PackML_V2.E_PMLCommand.ePMLCommand_Unsuspend);
+            ApplyCommand := TRUE;
+        END_IF
+    E_ConsoleCommand.Stop:
+        IF (_CurrentState <> Tc3_PackML_V2.E_PMLState.ePMLState_Undefined) AND
+            (_CurrentState <> Tc3_PackML_V2.E_PMLState.ePMLState_Stopped) AND
+            (_CurrentState <> Tc3_PackML_V2.E_PMLState.ePMLState_Stopping) AND
+            (_CurrentState <> Tc3_PackML_V2.E_PMLState.ePMLState_Aborted) AND
+            (_CurrentState <> Tc3_PackML_V2.E_PMLState.ePMLState_Aborting) AND
+            (_CurrentState <> Tc3_PackML_V2.E_PMLState.ePMLState_Clearing) THEN
+            ChangeState(Tc3_PackML_V2.E_PMLCommand.ePMLCommand_Stop);
+            ApplyCommand := TRUE;
+        END_IF
+    E_ConsoleCommand.Abort:
+        IF (_CurrentState <> Tc3_PackML_V2.E_PMLState.ePMLState_Aborted) AND
+            (_CurrentState <> Tc3_PackML_V2.E_PMLState.ePMLState_Aborting) AND
+            (_CurrentState <> Tc3_PackML_V2.E_PMLState.ePMLState_Undefined) THEN
+            ChangeState(Tc3_PackML_V2.E_PMLCommand.ePMLCommand_Abort);
+            ApplyCommand := TRUE;
+        END_IF
+    E_ConsoleCommand.Clear:
+        IF NOT AirFault AND (_CurrentState = Tc3_PackML_V2.E_PMLState.ePMLState_Aborted) THEN
+            ChangeState(Tc3_PackML_V2.E_PMLCommand.ePMLCommand_Clear);
+            ApplyCommand := TRUE;
+        END_IF
+    E_ConsoleCommand.Manual, E_ConsoleCommand.Automatic:
+        IF _CurrentState = Tc3_PackML_V2.E_PMLState.ePMLState_Stopped THEN
+            IF (Code = E_ConsoleCommand.Manual) AND NOT IsManual THEN
+                ChangeMode(E_PMLUnitMode.ePMLUnitMode_UserMode1);
+                ApplyCommand := TRUE;
+            ELSIF (Code = E_ConsoleCommand.Automatic) AND IsManual THEN
+                ChangeMode(E_PMLUnitMode.ePMLUnitMode_Production);
+                ApplyCommand := TRUE;
+            END_IF
+        END_IF
+    E_ConsoleCommand.Stroke1..E_ConsoleCommand.Stroke5:
+        IF IsManual AND (_CurrentState = Tc3_PackML_V2.E_PMLState.ePMLState_Idle) THEN
+            ActiveStation := Code - E_ConsoleCommand.Stroke1 + 1;
+            ChangeState(Tc3_PackML_V2.E_PMLCommand.ePMLCommand_Start);
+            ApplyCommand := TRUE;
+        END_IF
+    E_ConsoleCommand.DropAir:
+        ApplyCommand := NOT AirFault;
+        AirFault := TRUE;
+        IF (_CurrentState <> Tc3_PackML_V2.E_PMLState.ePMLState_Aborted) AND (_CurrentState <> Tc3_PackML_V2.E_PMLState.ePMLState_Aborting) THEN
+            ChangeState(Tc3_PackML_V2.E_PMLCommand.ePMLCommand_Abort);
+        END_IF
+    E_ConsoleCommand.RestoreAir:
+        ApplyCommand := AirFault;
+        AirFault := FALSE;
+    E_ConsoleCommand.LowBlanks:
+        ApplyCommand := NOT LowStock;
+        LowStock := TRUE;
+    E_ConsoleCommand.MissingSeal:
+        ApplyCommand := NOT Devices.MissingSeal;
+        Devices.MissingSeal := TRUE;
+    E_ConsoleCommand.RestoreSeal:
+        ApplyCommand := Devices.MissingSeal;
+        Devices.MissingSeal := FALSE;
+    E_ConsoleCommand.Refill:
+        ApplyCommand := LowStock;
+        LowStock := FALSE;
+END_CASE]]></ST></Implementation>
+    </Method>
+    <Method Name="PublishStatus" Id="{52592E20-A431-4FDA-93CC-000000000025}">
+      <Declaration><![CDATA[METHOD PRIVATE PublishStatus]]></Declaration>
+      <Implementation><ST><![CDATA[StatusBuffer[0] := 51002;
+StatusBuffer[1] := TO_DINT(_CurrentState);
+StatusBuffer[2] := BOOL_TO_DINT(_CurrentMode = E_PMLUnitMode.ePMLUnitMode_UserMode1);
+StatusBuffer[3] := ActiveStation;
+StatusBuffer[4] := 0;
+IF (ActiveStation >= 1) AND (ActiveStation <= 5) THEN
+    StatusBuffer[4] := Stations[ActiveStation].Phase;
+END_IF
+StatusBuffer[5] := Cartons;
+StatusBuffer[6] := BOOL_TO_DINT(AirFault);
+StatusBuffer[7] := BOOL_TO_DINT(LowStock);
+StatusBuffer[8] := Acknowledged;
+StatusBuffer[9] := (StatusBuffer[9] MOD 2000000000) + 1;
+StatusBuffer[10] := BOOL_TO_DINT(Accepted);
+Devices.Publish(StatusBuffer);
+GVL_HMI.Status := StatusBuffer;]]></ST></Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1"><POU Name="FB_CellDevices" Id="{69468DC3-8A7A-45D7-9465-000000000007}">
+  <Declaration><![CDATA[FUNCTION_BLOCK FB_CellDevices
+VAR
+    FeedAxis : FB_SimAxis;
+    TrackMover : FB_SimAxis;
+    ShuttleX : FB_SimAxis;
+    ShuttleY : FB_SimAxis;
+    Camera : FB_SealInspection;
+END_VAR
+VAR_OUTPUT
+    Indexing : BOOL;
+    Rejected : DINT;
+END_VAR
+VAR_INPUT
+    MissingSeal : BOOL;
+END_VAR]]></Declaration>
+  <Implementation><ST><![CDATA[]]></ST></Implementation>
+  <Method Name="ResetDevices" Id="{69468DC3-8A7A-45D7-9465-000000000008}">
+    <Declaration><![CDATA[METHOD ResetDevices]]></Declaration>
+    <Implementation><ST><![CDATA[FeedAxis.Home();
+TrackMover.Home();
+ShuttleX.Home();
+ShuttleY.Home();
+Camera.ClearResult();
+Indexing := FALSE;]]></ST></Implementation>
+  </Method>
+  <Method Name="ProcessStation" Id="{69468DC3-8A7A-45D7-9465-000000000009}">
+    <Declaration><![CDATA[METHOD ProcessStation
+VAR_INPUT
+    Station : DINT;
+    Phase : DINT;
+END_VAR]]></Declaration>
+    <Implementation><ST><![CDATA[CASE Station OF
+    1: // Servo meters a 180 mm blank.
+        FeedAxis.MoveToward(180, 2);
+    4: // Trigger once when the closing platen reaches its forward limit.
+        IF Phase >= 100 THEN Camera.Inspect(MissingSeal); END_IF
+    5: // Route the sealed carton to one of two discharge lanes.
+        ShuttleX.MoveToward(240, 2);
+        ShuttleY.MoveToward(SEL(Camera.Verdict = 1, -120, 120), 2);
+END_CASE]]></ST></Implementation>
+  </Method>
+  <Method Name="IndexToNext" Id="{69468DC3-8A7A-45D7-9465-000000000010}">
+    <Declaration><![CDATA[METHOD IndexToNext : BOOL
+VAR_INPUT
+    Station : DINT;
+END_VAR]]></Declaration>
+    <Implementation><ST><![CDATA[IndexToNext := TrackMover.MoveToward(Station * 560, 8);
+Indexing := NOT IndexToNext;]]></ST></Implementation>
+  </Method>
+  <Method Name="ReadyToLeave" Id="{0DFB410B-908E-4365-B964-B1C23F60891C}">
+    <Declaration><![CDATA[METHOD ReadyToLeave : BOOL
+VAR_INPUT
+    Station : DINT;
+END_VAR]]></Declaration>
+    <Implementation><ST><![CDATA[CASE Station OF
+    1: ReadyToLeave := FeedAxis.PositionMm = 180;
+    4: ReadyToLeave := Camera.Verdict <> 0;
+    5: ReadyToLeave := (ShuttleX.PositionMm = 240) AND
+           (ShuttleY.PositionMm = SEL(Camera.Verdict = 1, -120, 120));
+ELSE
+    ReadyToLeave := TRUE;
+END_CASE]]></ST></Implementation>
+  </Method>
+  <Method Name="FinishCarton" Id="{69468DC3-8A7A-45D7-9465-000000000011}">
+    <Declaration><![CDATA[METHOD FinishCarton : BOOL]]></Declaration>
+    <Implementation><ST><![CDATA[FinishCarton := Camera.Verdict = 1;
+IF NOT FinishCarton THEN Rejected := Rejected + 1; END_IF]]></ST></Implementation>
+  </Method>
+  <Method Name="Publish" Id="{69468DC3-8A7A-45D7-9465-000000000012}">
+    <Declaration><![CDATA[METHOD Publish
+VAR_IN_OUT
+    Words : ARRAY[0..19] OF DINT;
+END_VAR]]></Declaration>
+    <Implementation><ST><![CDATA[Words[11] := FeedAxis.PositionMm;
+Words[12] := TrackMover.PositionMm;
+Words[13] := ShuttleX.PositionMm;
+Words[14] := ShuttleY.PositionMm;
+Words[15] := Camera.Verdict;
+Words[16] := Rejected;
+Words[17] := BOOL_TO_DINT(MissingSeal);
+Words[18] := BOOL_TO_DINT(Indexing);
+Words[19] := Camera.BrightSamples;]]></ST></Implementation>
+  </Method>
+</POU></TcPlcObject>

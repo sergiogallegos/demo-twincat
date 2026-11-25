@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1"><POU Name="PRG_SortShuttle" Id="{29056297-06CB-4D74-B9EB-F24F264DA6C5}">
+  <Declaration><![CDATA[PROGRAM PRG_SortShuttle
+VAR
+    Mover : MC_PlanarMover;
+    Reply : MC_PlanarFeedback;
+    Destination : PositionXYC;
+    Run : BOOL;
+    SealPassed : BOOL := TRUE;
+    Step : UINT;
+    Completed : BOOL;
+    Faulted : BOOL;
+    ErrorId : UDINT;
+    ResetFault : BOOL;
+END_VAR]]></Declaration>
+  <Implementation><ST><![CDATA[// Set Run only after linking a simulated MC mover to this instance.
+CASE Step OF
+    0:
+        IF Run THEN
+            Completed := FALSE;
+            Mover.Enable(Reply);
+            Step := 10;
+        END_IF
+    10:
+        IF Reply.Done THEN Step := 20; END_IF
+    20:
+        IF SealPassed THEN
+            Destination.SetValuesXY(240, 120);
+        ELSE
+            Destination.SetValuesXY(240, -120);
+        END_IF
+        Mover.MoveToPosition(Reply, Destination, 0, 0);
+        Step := 30;
+    30:
+        IF Reply.Done THEN
+            Completed := TRUE;
+            Step := 40;
+        END_IF
+    40:
+        IF NOT Run THEN Step := 50; END_IF
+    90:
+        IF ResetFault AND NOT Run THEN
+            Faulted := FALSE;
+            ErrorId := 0;
+            Step := 0;
+        END_IF
+    50:
+        IF Run THEN
+            Completed := FALSE;
+            Step := 20;
+        END_IF
+END_CASE
+Mover.Update();
+Reply.Update();
+IF ((Step = 10) OR (Step = 30)) AND (Reply.Error OR Reply.Aborted) THEN
+    ErrorId := Reply.ErrorId;
+    Faulted := TRUE;
+    Completed := FALSE;
+    Step := 90;
+END_IF]]></ST></Implementation>
+</POU></TcPlcObject>

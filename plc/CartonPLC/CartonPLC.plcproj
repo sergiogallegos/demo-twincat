@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FileVersion>1.0.0.0</FileVersion><SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{52592E20-A431-4FDA-93CC-000000000002}</ProjectGuid><Name>CartonPLC</Name>
+    <ProgramVersion>3.1.4024.53</ProgramVersion>
+    <Application>{52592E20-A431-4FDA-93CC-000000000034}</Application>
+    <TypeSystem>{52592E20-A431-4FDA-93CC-000000000035}</TypeSystem>
+    <Implicit_Task_Info>{52592E20-A431-4FDA-93CC-000000000036}</Implicit_Task_Info>
+    <Implicit_KindOfTask>{52592E20-A431-4FDA-93CC-000000000037}</Implicit_KindOfTask>
+    <Implicit_Jitter_Distribution>{52592E20-A431-4FDA-93CC-000000000038}</Implicit_Jitter_Distribution>
+    <LibraryReferences>{52592E20-A431-4FDA-93CC-000000000039}</LibraryReferences>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="E_ConsoleCommand.TcDUT"><SubType>Code</SubType></Compile>
+    <Compile Include="GVL_HMI.TcGVL"><SubType>Code</SubType></Compile>
+    <Compile Include="FB_VirtualCylinder.TcPOU"><SubType>Code</SubType></Compile>
+    <Compile Include="FB_StrokeStation.TcPOU"><SubType>Code</SubType></Compile>
+    <Compile Include="FB_CartonCell.TcPOU"><SubType>Code</SubType></Compile>
+    <Compile Include="FB_SimAxis.TcPOU"><SubType>Code</SubType></Compile>
+    <Compile Include="FB_SealInspection.TcPOU"><SubType>Code</SubType></Compile>
+    <Compile Include="FB_CellDevices.TcPOU"><SubType>Code</SubType></Compile>
+    <Compile Include="MAIN.TcPOU"><SubType>Code</SubType></Compile>
+    <Compile Include="PlcTask.TcTTO"><SubType>Code</SubType></Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <PlaceholderReference Include="SPT Base Types">
+      <DefaultResolution>SPT Base Types, 3.9.0 (Beckhoff Automation LLC)</DefaultResolution>
+      <Namespace>SPT_BaseTypes</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc3_PackML_V2">
+      <DefaultResolution>Tc3_PackML_V2, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc3_PackML_V2</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc2_Standard">
+      <DefaultResolution>Tc2_Standard, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc2_Standard</Namespace>
+    </PlaceholderReference>
+    <PlaceholderResolution Include="SPT Base Types"><Resolution>SPT Base Types, 3.9.0 (Beckhoff Automation LLC)</Resolution></PlaceholderResolution>
+    <PlaceholderResolution Include="SPT Event Logger"><Resolution>SPT Event Logger, 3.9.0 (Beckhoff Automation LLC)</Resolution></PlaceholderResolution>
+  </ItemGroup>
+</Project>

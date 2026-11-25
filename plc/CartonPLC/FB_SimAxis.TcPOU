@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1"><POU Name="FB_SimAxis" Id="{69468DC3-8A7A-45D7-9465-000000000001}">
+  <Declaration><![CDATA[FUNCTION_BLOCK FB_SimAxis
+VAR_OUTPUT
+    PositionMm : DINT;
+END_VAR]]></Declaration>
+  <Implementation><ST><![CDATA[]]></ST></Implementation>
+  <Method Name="MoveToward" Id="{69468DC3-8A7A-45D7-9465-000000000002}">
+    <Declaration><![CDATA[METHOD MoveToward : BOOL
+VAR_INPUT
+    TargetMm : DINT;
+    MaxStepMm : DINT;
+END_VAR]]></Declaration>
+    <Implementation><ST><![CDATA[// Deterministic virtual axis. One invocation corresponds to one 10 ms task tick.
+PositionMm := PositionMm + LIMIT(-MaxStepMm, TargetMm - PositionMm, MaxStepMm);
+MoveToward := PositionMm = TargetMm;]]></ST></Implementation>
+  </Method>
+  <Method Name="Home" Id="{69468DC3-8A7A-45D7-9465-000000000003}">
+    <Declaration><![CDATA[METHOD Home]]></Declaration>
+    <Implementation><ST><![CDATA[PositionMm := 0;]]></ST></Implementation>
+  </Method>
+</POU></TcPlcObject>

@@ -1,0 +1,12 @@
+* text=auto
+*.css text eol=lf
+*.cs text eol=lf
+*.tsx text eol=lf
+*.ts text eol=lf
+*.py text eol=lf
+*.mp4 binary
+*.png binary
+*.bmp binary
+*.glb binary
+*.blend binary
+*.FCStd binary

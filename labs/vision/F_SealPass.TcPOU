@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1"><POU Name="F_SealPass" Id="{CFA70A26-15B3-4CD7-831F-930C68FCB5D2}">
+  <Declaration><![CDATA[FUNCTION F_SealPass : BOOL
+VAR_INPUT
+    Image : ITcVnImage;
+END_VAR
+VAR_OUTPUT
+    ResultCode : HRESULT;
+    BrightSamples : UINT;
+END_VAR
+VAR
+    Pixel : TcVnVector4_LREAL;
+    SampleIndex : UDINT;
+END_VAR]]></Declaration>
+  <Implementation><ST><![CDATA[// Five sample points from the Cartesian centre line of the supplied 160 x 100 frames.
+ResultCode := 0;
+BrightSamples := 0;
+FOR SampleIndex := 0 TO 4 DO
+    ResultCode := F_VN_GetPixel(Image, Pixel, 80, 26 + 12 * SampleIndex, ResultCode);
+    IF (ResultCode >= 0) AND (Pixel[0] >= 200) THEN
+        BrightSamples := BrightSamples + 1;
+    END_IF
+END_FOR
+F_SealPass := (ResultCode >= 0) AND (BrightSamples >= 4);]]></ST></Implementation>
+</POU></TcPlcObject>
