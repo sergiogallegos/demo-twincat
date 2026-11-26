@@ -20,7 +20,7 @@ internal static class Program
 
         using var adapter = new AdsMachine(configuration);
         Frame first = adapter.Read();
-        Check(first.State == CellState.Stopped && first.Devices.TrackMm == 1120,
+        Check(first.State == CellState.Stopped && first.Devices.TrackMm == 1120 && first.Line?.Products[0] == 73,
             "Initial status decoding failed.");
 
         const int resetRequest = (1 << 8) | (int)OperatorCommand.Reset;

@@ -19,6 +19,7 @@ jobs:
       - run: npm --prefix web run check
       - run: npm --prefix web run build
       - run: dotnet build server
+      - run: dotnet run --project tests/LineBench
       - run: python3 scripts/verify_contract.py
       - name: Exercise the service and machine
         shell: bash
@@ -30,4 +31,5 @@ jobs:
             if curl -fsS http://127.0.0.1:5080/api/machine > /dev/null; then break; fi
             sleep 0.2
           done
+          python3 scripts/smoke_line.py
           python3 scripts/smoke.py

@@ -25,7 +25,14 @@ TYPE E_ConsoleCommand :
     LowBlanks := 19,
     Refill := 20,
     MissingSeal := 21,
-    RestoreSeal := 22
+    RestoreSeal := 22,
+    LoopLine := 23,
+    Bench := 24,
+    Standard := 25,
+    Precision := 26,
+    JamClamp := 27,
+    ReleaseClamp := 28,
+    AckClamp := 29
 ) DINT;
 END_TYPE]]></Declaration>
 

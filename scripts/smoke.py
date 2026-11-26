@@ -46,6 +46,7 @@ def main():
     if initial["source"] != "Simulation" or initial["frame"]["state"] != "Stopped" or initial["frame"]["manual"]:
         raise SystemExit("Start a fresh local Simulation host in Automatic / Stopped before this test.")
     count = initial["frame"]["cartons"]
+    command("Bench")
     rejected("Start")
     command("Reset")
     state("Idle")

@@ -52,12 +52,12 @@ internal sealed class SymbolTestServer() : AdsServer(Port, "Carton Cell contract
             return Task.FromResult(ResultReadBytes.CreateSuccess(new byte[64]));
         }
 
-        if (group != ValueByHandle || offset != StatusHandle || length != 80)
+        if (group != ValueByHandle || offset != StatusHandle || length != Frame.WordCount * sizeof(int))
         {
             return Task.FromResult(ResultReadBytes.CreateError(AdsErrorCode.DeviceInvalidOffset));
         }
 
-        var words = new int[20];
+        var words = new int[Frame.WordCount];
         words[0] = Frame.Signature;
         words[1] = (int)(acknowledged == 0 ? CellState.Stopped : CellState.Resetting);
         words[8] = acknowledged;
@@ -66,7 +66,9 @@ internal sealed class SymbolTestServer() : AdsServer(Port, "Carton Cell contract
         words[12] = 1120;
         words[14] = -120;
 
-        var wire = new byte[80];
+        words[20] = 1;
+        words[40] = 73;
+        var wire = new byte[Frame.WordCount * sizeof(int)];
         Buffer.BlockCopy(words, 0, wire, 0, wire.Length);
         return Task.FromResult(ResultReadBytes.CreateSuccess(wire));
     }

@@ -6,8 +6,8 @@ VAR_OUTPUT
     Position : DINT; // 0 = home, 100 = forward limit
 END_VAR]]></Declaration>
     <Implementation><ST><![CDATA[]]></ST></Implementation>
-    <Method Name="Move" Id="{52592E20-A431-4FDA-93CC-000000000005}">
-      <Declaration><![CDATA[METHOD Move
+    <Method Name="FollowStroke" Id="{52592E20-A431-4FDA-93CC-000000000005}">
+      <Declaration><![CDATA[METHOD FollowStroke
 VAR_INPUT
     Forward : BOOL;
 END_VAR]]></Declaration>

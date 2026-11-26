@@ -5,6 +5,7 @@
 *.ts text eol=lf
 *.py text eol=lf
 *.mp4 binary
+*.webm binary
 *.png binary
 *.bmp binary
 *.glb binary

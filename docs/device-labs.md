@@ -1,6 +1,8 @@
 # Motion and vision labs
 
-The machine integrates four devices into one packaging cycle. **Device labs** displays their live feedback from the selected machine source. In Simulation, C# calculates the virtual plant. In ADS, the TwinCAT PLC calculates the same virtual plant and owns PackML. Both paths work without physical devices. The separate **native labs** below exercise the vendor libraries with TwinCAT's own simulation facilities and a licensed test runtime or trial.
+The **Device labs** tab in the Carton Cell HMI displays simulated feedback. In the continuous profile it shows eight virtual axis pairs and six planar movers. The main cell calculates positions in C# or in the supplied PLC model and has no native TwinCAT motion configuration. The **native labs** below are separate engineering exercises using Beckhoff libraries and TwinCAT simulation on a compatible test runtime or trial.
+
+## Single-carton bench devices
 
 | Device | Machine action | Watch during Execute | Release condition |
 | --- | --- | --- | --- |
@@ -13,7 +15,7 @@ Manual strokes isolate one cylinder. An interrupted automatic cycle retains its 
 
 ## Demonstration sequence
 
-1. Start the HMI in the default mode, Reset and Start. Open **Device labs** and select each device to inspect its measured position or classification.
+1. Start the HMI in Local simulation. While Stopped, select **Single-carton bench**, then Reset and Start. Open **Device labs** and select each device to inspect its simulated position or classification.
 2. At Complete, **Seal vision** should report Pass and five bright samples. **XPlanar sorter** should show X 240 and Y +120 mm.
 3. In Diagnostics select **Remove seal**. Reset and start a new carton. At ST-04 the verdict becomes Reject. At Complete check Y −120 mm, a new reject and an unchanged accepted-carton count.
 4. Restore the seal input. The prior verdict remains latched until Reset. Change the input after an inspection to demonstrate why product decisions belong to a specific cycle.
@@ -28,7 +30,7 @@ Watch the buffered absolute moves, command execution flags and actual position i
 
 Run `python scripts/prepare_labs.py xts` and open the displayed system project. Register the SPT v3 library repository as described in the commissioning guide. Install the compatible XTS engineering/runtime and motion functions required by the sample. Examine its Library Manager and the XTS processing unit before building. Select **Simulation** in its operation mode and disable any virtual fieldbus devices the sample does not require in simulation.
 
-Run on the isolated target. Follow the SPT XTS quick start through initialization and the PackML commands, and inspect movement in XTS Viewer. In the carton cell there is one virtual carrier. Integrating multiple native movers also requires track ownership, station reservations and collision handling. [SPT XTS sample and quick start](https://github.com/Beckhoff-USA-Community/SPT_XTS_Sample) · [Beckhoff simulation settings](https://infosys.beckhoff.com/content/1033/xts_software/10484022667.html)
+Run the separate XTS sample on the isolated target. Follow the SPT XTS quick start through initialization and the PackML commands, and inspect movement in XTS Viewer. The main Carton Cell models ten carts in its continuous profile and one carrier in its single-carton bench. Integrating native movers into the main cell would require track ownership, station reservations and collision handling. [SPT XTS sample and quick start](https://github.com/Beckhoff-USA-Community/SPT_XTS_Sample) · [Beckhoff simulation settings](https://infosys.beckhoff.com/content/1033/xts_software/10484022667.html)
 
 ## Native XPlanar sorter
 

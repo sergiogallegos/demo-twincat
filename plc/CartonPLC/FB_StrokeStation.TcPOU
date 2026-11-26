@@ -21,7 +21,7 @@ Done := FALSE;]]></ST></Implementation>
     <Method Name="Step" Id="{52592E20-A431-4FDA-93CC-000000000009}">
       <Declaration><![CDATA[METHOD Step]]></Declaration>
       <Implementation><ST><![CDATA[IF Done THEN RETURN; END_IF
-Cylinder.Move(Forward := NOT Returning);
+Cylinder.FollowStroke(Forward := NOT Returning);
 IF Returning THEN
     Phase := 200 - Cylinder.Position;
     Done := Cylinder.Position = 0;

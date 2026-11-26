@@ -27,10 +27,10 @@ app.MapGet("/api/model", (IWebHostEnvironment env) =>
 app.MapGet("/api/machine", (ConsoleService console) => console.Snapshot());
 app.MapPost("/api/commands", (CommandRequest request, ConsoleService console) =>
     Enum.TryParse<OperatorCommand>(request.Command, false, out var command) && Enum.IsDefined(command)
-        ? console.Command(command) : Results.BadRequest("Unknown command."));
+        ? console.Command(command, request.Occurrence) : Results.BadRequest("Unknown command."));
 app.MapPost("/api/messages", (OperatorNote note, ConsoleService console) => console.AddMessage(note.Text));
 app.Run();
 
-internal record CommandRequest(string Command);
+internal record CommandRequest(string Command, int? Occurrence);
 
 internal record OperatorNote(string? Text);

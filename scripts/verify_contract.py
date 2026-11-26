@@ -31,8 +31,8 @@ def main():
 
     machine = source("FB_CartonCell.TcPOU")
     devices = source("FB_CellDevices.TcPOU")
-    assert "Signature = 51002" in host and "StatusBuffer[0] := 51002" in machine
-    assert "Status : ARRAY[0..19] OF DINT" in source("GVL_HMI.TcGVL")
+    assert "Signature = 51003" in host and "StatusBuffer[0] := 51003" in machine
+    assert "Status : ARRAY[0..105] OF DINT" in source("GVL_HMI.TcGVL")
     words = re.findall(r"(?:StatusBuffer|Words)\[(\d+)\] :=", machine + devices)
     assert {int(word) for word in words} == set(range(20))
 
@@ -53,6 +53,18 @@ def main():
     nodes = {n["name"] for n in json.loads(scene[20:20+length])["nodes"]}
     assert {"FeedServo", "TrackCarrier", "SealCamera", "PlanarTile", "PlanarShuttle"} <= nodes
     assert all(f"Moving{i}_Rod" in nodes for i in range(5))
+    line = source("FB_ContinuousLine.TcPOU")
+    assert all(f"Words[{i}] :=" in line for i in [*range(20,38),104,105])
+    assert all(f"Words[{i}+i]" in line for i in [40,56,72,88,96])
+    line_scene = (ROOT / "web/public/continuous-line.glb").read_bytes()
+    size = struct.unpack_from("<I", line_scene, 12)[0]
+    names = {n["name"] for n in json.loads(line_scene[20:20+size])["nodes"]}
+    assert all(f"Mover{i:02}" in names and f"Box{i:02}" in names for i in range(1,17))
+    assert all(f"ServoX{i}" in names and f"ServoZ{i}" in names for i in range(1,9))
+    assert {f"Tool{i}" for i in range(1, 9)} <= names
+    assert {"InsertFeeder", "BlankMagazine", "VisionArch", "PackArch", "Handoff", "XtsStator", "PlanarTiles", "InsertClamp", "ClampJaw"} <= names
+    assert {"GuardFeedDoor", "GuardInsertDoor", "GuardLoadDoor", "GuardVisionDoor", "GuardRoof", "GuardUtilities", "OperatorTerminal", "OperatorArm", "PanelDisconnect", "LocalControlsFeed", "LocalControlsLoad", "LocalControlsFinish", "SignalTower", "PackDischarge", "PackOutTote"} <= names
+    assert "RequestSample := GVL_HMI.Request;" in machine and "Line.Publish(StatusBuffer)" in machine
     print("PASS  task, project references, command IDs, status layout, pixel fixtures and CAD anchors")
 
 

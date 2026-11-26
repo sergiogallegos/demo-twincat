@@ -1,6 +1,6 @@
 # Engineering walkthrough
 
-Use this walkthrough to present the design or review an extension.
+For the continuous line, trace one carton in the [architecture guide](architecture.md), then follow the [continuous commissioning exercise](commissioning.md#continuous-line-acceptance). The questions below cover the selectable five-station teaching bench.
 
 **Who can advance a station?** In ADS mode only the PLC task calls `FB_CartonCell.Execute`. It observes a returned cylinder, the process-device completion condition and the next carrier position. Browser refresh rate has no effect on the sequence. Hold stops progression but retains the active station and stroke. Reset deliberately discards an interrupted virtual carton.
 

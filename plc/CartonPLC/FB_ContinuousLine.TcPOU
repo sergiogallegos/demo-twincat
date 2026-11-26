@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_ContinuousLine" Id="{CB31703C-BDF0-4A15-AF15-000000000015}">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_ContinuousLine
+VAR
+    Clamp : FB_LineClamp;
+    Actuator : I_LineClamp;
+    Vision : FB_SealInspection;
+    Products, Checks, Failures : ARRAY[0..15] OF DINT;
+    CamX, CamZ : ARRAY[0..7] OF DINT;
+    Tick, PitchIndex, Issued, Good, Rejected, LastId, LastFailed, LastChecked, Discarded : DINT;
+    RunTicks, PlannedTicks, IdealTicks, WaitTicks, Travel, ClampMm : DINT;
+    ClampRequest : BOOL;
+END_VAR
+VAR_INPUT
+    Enabled : BOOL := TRUE;
+    Precision, Jammed, Timing : BOOL;
+END_VAR
+VAR_OUTPUT
+    Alarm, Occurrence : DINT;
+END_VAR]]></Declaration>
+    <Implementation><ST><![CDATA[]]></ST></Implementation>
+    <Method Name="ClearAlarm" Id="{23E033AD-216F-4B19-B44B-66BD0F592413}">
+      <Declaration><![CDATA[METHOD ClearAlarm]]></Declaration>
+      <Implementation><ST><![CDATA[Alarm := 0;]]></ST></Implementation>
+    </Method>
+    <Method Name="AcknowledgeAlarm" Id="{36238D2A-D0CF-4585-AD4F-8D3C91485777}">
+      <Declaration><![CDATA[METHOD AcknowledgeAlarm]]></Declaration>
+      <Implementation><ST><![CDATA[Alarm := 2;]]></ST></Implementation>
+    </Method>
+    <Method Name="Clock" Id="{CB31703C-BDF0-4A15-AF15-000000000007}">
+      <Declaration><![CDATA[METHOD Clock
+VAR_INPUT
+    Executing : BOOL;
+END_VAR]]></Declaration>
+      <Implementation><ST><![CDATA[IF Timing THEN
+    PlannedTicks := PlannedTicks + 1;
+    IF Executing THEN RunTicks := RunTicks + 1; END_IF
+END_IF]]></ST></Implementation>
+    </Method>
+    <Method Name="ResetLine" Id="{CB31703C-BDF0-4A15-AF15-000000000008}">
+      <Declaration><![CDATA[METHOD ResetLine
+VAR
+    i : INT;
+END_VAR]]></Declaration>
+      <Implementation><ST><![CDATA[FOR i := 0 TO 15 DO
+    IF Products[i] <> 0 THEN Discarded := Discarded + 1; END_IF
+    Products[i] := 0; Checks[i] := 0; Failures[i] := 0;
+END_FOR
+FOR i := 0 TO 7 DO CamX[i] := 0; CamZ[i] := 0; END_FOR
+Tick := 0; PitchIndex := 0; WaitTicks := 0; Travel := 0;
+Actuator := Clamp;
+Actuator.Home();
+ClampMm := 0; ClampRequest := FALSE;]]></ST></Implementation>
+    </Method>
+    <Method Name="AtSlot" Id="{CB31703C-BDF0-4A15-AF15-000000000009}">
+      <Declaration><![CDATA[METHOD AtSlot : DINT
+VAR_INPUT
+    Slot, Count : DINT;
+END_VAR]]></Declaration>
+      <Implementation><ST><![CDATA[AtSlot := (Slot + Count - (PitchIndex MOD Count)) MOD Count;]]></ST></Implementation>
+    </Method>
+    <Method Name="Ease" Id="{CB31703C-BDF0-4A15-AF15-000000000010}">
+      <Declaration><![CDATA[METHOD Ease : DINT
+VAR_INPUT
+    InputPhase : DINT;
+END_VAR
+VAR
+    u : DINT;
+END_VAR]]></Declaration>
+      <Implementation><ST><![CDATA[u := LIMIT(0, InputPhase, 100);
+Ease := u * u * (300 - 2 * u) / 1000;]]></ST></Implementation>
+    </Method>
+    <Method Name="InspectMover" Id="{CB31703C-BDF0-4A15-AF15-000000000011}">
+      <Declaration><![CDATA[METHOD InspectMover
+VAR_INPUT
+    Mover, BitNumber : DINT;
+    Passed : BOOL;
+END_VAR
+VAR
+    Mask : DWORD;
+END_VAR]]></Declaration>
+      <Implementation><ST><![CDATA[Mask := SHL(DWORD#1, DINT_TO_UINT(BitNumber));
+Checks[Mover] := DWORD_TO_DINT(DINT_TO_DWORD(Checks[Mover]) OR Mask);
+IF NOT Passed THEN Failures[Mover] := DWORD_TO_DINT(DINT_TO_DWORD(Failures[Mover]) OR Mask); END_IF]]></ST></Implementation>
+    </Method>
+    <Method Name="Step" Id="{CB31703C-BDF0-4A15-AF15-000000000012}">
+      <Declaration><![CDATA[METHOD Step
+VAR_INPUT
+    MissingSeal : BOOL;
+END_VAR
+VAR
+    p, Mover, Station, Reach, Depth, Stroke : DINT;
+    FirstScan : BOOL;
+END_VAR
+VAR CONSTANT
+    Period : DINT := 200; // 2 s at the 10 ms scan rate
+END_VAR]]></Declaration>
+      <Implementation><ST><![CDATA[Stroke := SEL(Precision, 40, 48);
+p := Tick * 100 / Period;
+FirstScan := (Tick MOD (Period / 100)) = 0;
+Mover := AtSlot(0, 10);
+IF (Tick = 0) AND (Products[Mover] = 0) THEN
+    Issued := Issued + 1; Products[Mover] := Issued;
+END_IF
+ClampRequest := (Products[AtSlot(2, 10)] <> 0) AND (p >= 12) AND (p < 54);
+Actuator := Clamp;
+Clamp.Jammed := Jammed;
+ClampMm := Actuator.Follow(ClampRequest);
+IF ClampRequest AND (ClampMm < 16) THEN WaitTicks := WaitTicks + 1; ELSE WaitTicks := 0; END_IF
+IF WaitTicks >= 15 THEN
+    Occurrence := (Occurrence MOD 8388606) + 1;
+    Alarm := 1;
+    RETURN;
+END_IF
+IF p < 12 THEN Reach := Ease(p * 100 / 12);
+ELSIF p < 48 THEN Reach := 1000;
+ELSE Reach := 1000 - Ease((p - 48) * 100 / 12); END_IF
+IF p < 12 THEN Depth := 0;
+ELSIF p < 26 THEN Depth := Ease((p - 12) * 100 / 14);
+ELSIF p < 36 THEN Depth := 1000;
+ELSE Depth := 1000 - Ease((p - 36) * 100 / 12); END_IF
+Travel := Ease((p - 60) * 100 / 40);
+FOR Station := 0 TO 7 DO
+    Mover := AtSlot(SEL(Station < 4, Station + 1, Station), 10);
+    IF Products[Mover] <> 0 THEN
+        CamX[Station] := Reach * (100 + Station * 4) / 1000;
+        CamZ[Station] := Depth * Stroke / 1000;
+        IF Station = 5 THEN
+            IF p <= 80 THEN CamX[Station] := Travel / 2;
+            ELSE CamX[Station] := 250 - Ease((p-80)*100/20) / 4; END_IF
+            IF p < 60 THEN CamZ[Station] := 0;
+            ELSIF p <= 74 THEN CamZ[Station] := Ease((p-60)*100/14) * Stroke / 1000;
+            ELSE CamZ[Station] := (1000-Ease((p-78)*100/8)) * Stroke / 1000; END_IF
+        END_IF
+        IF (p = SEL(Station = 5, 32, 76)) AND FirstScan THEN
+            InspectMover(Mover, Station, (CamZ[Station] = Stroke) AND ((Station <> 2) OR (ClampMm = 16)));
+        END_IF
+    ELSE CamX[Station] := 0; CamZ[Station] := 0; END_IF
+END_FOR
+IF (p = 54) AND FirstScan THEN ProcessTable(MissingSeal, Period); END_IF
+Tick := Tick + 1;
+IF Tick = Period THEN
+    Tick := 0; Travel := 0; PitchIndex := (PitchIndex + 1) MOD 30;
+END_IF]]></ST></Implementation>
+    </Method>
+    <Method Name="ProcessTable" Id="{CB31703C-BDF0-4A15-AF15-000000000013}">
+      <Declaration><![CDATA[METHOD ProcessTable
+VAR_INPUT
+    MissingSeal : BOOL;
+    Period : DINT;
+END_VAR
+VAR
+    Source, Target, Seat, Camera, Pack : DINT;
+END_VAR]]></Declaration>
+      <Implementation><ST><![CDATA[Source := AtSlot(8,10); Target := 10 + AtSlot(0,6);
+IF (Products[Source] <> 0) AND (Products[Target] = 0) THEN
+    Products[Target] := Products[Source]; Checks[Target] := Checks[Source]; Failures[Target] := Failures[Source];
+    Products[Source] := 0; Checks[Source] := 0; Failures[Source] := 0;
+END_IF
+Seat := 10 + AtSlot(1,6); Camera := 10 + AtSlot(2,6); Pack := 10 + AtSlot(3,6);
+IF Products[Seat] <> 0 THEN InspectMover(Seat, 8, (DINT_TO_DWORD(Checks[Seat]) AND DWORD#255) = DWORD#255); END_IF
+IF Products[Camera] <> 0 THEN
+    Vision.ClearResult(); Vision.Inspect(MissingSeal);
+    InspectMover(Camera, 9, Vision.Verdict = 1);
+END_IF
+IF Products[Pack] <> 0 THEN
+    LastId := Products[Pack]; LastChecked := Checks[Pack]; LastFailed := Failures[Pack];
+    IF (LastChecked = 1023) AND (LastFailed = 0) THEN Good := Good + 1;
+    ELSE Rejected := Rejected + 1; END_IF
+    IdealTicks := IdealTicks + Period;
+    Products[Pack] := 0; Checks[Pack] := 0; Failures[Pack] := 0;
+END_IF]]></ST></Implementation>
+    </Method>
+    <Method Name="Publish" Id="{CB31703C-BDF0-4A15-AF15-000000000014}">
+      <Declaration><![CDATA[METHOD Publish
+VAR_IN_OUT
+    Words : ARRAY[0..105] OF DINT;
+END_VAR
+VAR
+    i : INT;
+END_VAR]]></Declaration>
+      <Implementation><ST><![CDATA[Words[20] := BOOL_TO_DINT(Enabled);
+Words[21] := BOOL_TO_DINT(Precision);
+Words[22] := Tick;
+Words[23] := PitchIndex;
+Words[24] := Issued;
+Words[25] := Good;
+Words[26] := Rejected;
+Words[27] := LastId;
+Words[28] := LastFailed;
+Words[29] := BOOL_TO_DINT(Jammed);
+Words[30] := Occurrence;
+Words[31] := Alarm;
+Words[32] := BOOL_TO_DINT(ClampRequest);
+Words[33] := ClampMm;
+Words[34] := RunTicks;
+Words[35] := PlannedTicks;
+Words[36] := IdealTicks;
+Words[37] := Discarded;
+FOR i := 0 TO 15 DO
+    Words[40+i] := Products[i]; Words[56+i] := Checks[i]; Words[72+i] := Failures[i];
+END_FOR
+FOR i := 0 TO 7 DO Words[88+i] := CamX[i]; Words[96+i] := CamZ[i]; END_FOR
+Words[104] := Travel;
+Words[105] := LastChecked;]]></ST></Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

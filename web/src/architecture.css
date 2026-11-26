@@ -1,0 +1,140 @@
+.arch {
+  display: grid;
+  gap: 14px;
+}
+.arch-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(200px, 0.8fr);
+  align-items: center;
+  overflow: hidden;
+}
+.arch-intro > div,
+.arch-content {
+  padding: clamp(15px, 2.2vw, 30px);
+}
+.arch h2,
+.arch h3 {
+  margin: 0;
+}
+.arch p {
+  line-height: 1.55;
+  margin: 0.5em 0;
+  color: #40535c;
+}
+.arch-intro figure {
+  margin: 0;
+  background: #e7e9e7;
+  align-self: stretch;
+}
+.arch-intro img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-height: 205px;
+  object-fit: contain;
+}
+.arch .arch-byline,
+.arch small {
+  color: #44656a;
+  font-size: 0.78rem;
+}
+.arch-tabs,
+.arch-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.arch [aria-pressed='true'] {
+  background: #225267;
+  color: white;
+}
+.arch-switch {
+  margin: 14px 0;
+}
+.signal-flow {
+  margin: 16px 0 22px;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  padding: 0;
+}
+.signal-flow li {
+  background: #f0f5f4;
+  border-top: 3px solid #428082;
+  padding: 12px;
+  position: relative;
+}
+.signal-flow li:not(:last-child)::after {
+  content: '→';
+  position: absolute;
+  right: -14px;
+  top: 40%;
+  color: #456769;
+}
+.signal-flow h3,
+.migration-list h3 {
+  font-size: 1rem;
+}
+.signal-flow p,
+.migration-list p {
+  font-size: 0.9rem;
+}
+.arch code {
+  overflow-wrap: anywhere;
+  font-size: 0.9em;
+}
+.object-map {
+  margin: 15px 0 20px;
+}
+.object-map > div,
+.migration-list article {
+  display: grid;
+  gap: 14px;
+  border-top: 1px solid var(--line);
+  padding: 12px 0;
+}
+.object-map > div {
+  grid-template-columns: minmax(100px, 0.25fr) 1fr;
+}
+.object-map dt,
+.migration-list small {
+  color: #356a6a;
+  font-weight: 650;
+}
+.object-map dd {
+  margin: 0;
+  line-height: 1.5;
+}
+.migration-list article {
+  grid-template-columns: 0.48fr 1fr 1fr;
+}
+@media (max-width: 900px) {
+  .signal-flow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .signal-flow li::after {
+    display: none;
+  }
+}
+@media (max-width: 640px) {
+  .arch-intro,
+  .signal-flow,
+  .object-map > div,
+  .migration-list article {
+    grid-template-columns: 1fr;
+  }
+  .object-map > div,
+  .migration-list article {
+    gap: 5px;
+  }
+  .arch-intro img {
+    max-height: 145px;
+  }
+  .arch-tabs button {
+    flex: 1;
+  }
+  .arch {
+    min-width: 0;
+  }
+}

@@ -71,7 +71,7 @@ IF NOT FinishCarton THEN Rejected := Rejected + 1; END_IF]]></ST></Implementatio
   <Method Name="Publish" Id="{69468DC3-8A7A-45D7-9465-000000000012}">
     <Declaration><![CDATA[METHOD Publish
 VAR_IN_OUT
-    Words : ARRAY[0..19] OF DINT;
+    Words : ARRAY[0..105] OF DINT;
 END_VAR]]></Declaration>
     <Implementation><ST><![CDATA[Words[11] := FeedAxis.PositionMm;
 Words[12] := TrackMover.PositionMm;

@@ -1,127 +1,247 @@
-import { Icon } from './Icon';
+import { useState } from 'react';
+import './architecture.css';
 
-const layers = [
+const topics = [
+  'Signal path',
+  'PLC object model',
+  'Hardware migration',
+] as const;
+const migration = [
   [
-    '01',
-    'Operator console',
-    'React · TypeScript',
-    'Renders the latest snapshot, enables permitted commands and moves the 3D rods from position feedback.',
+    'Unit control',
+    'PackML states, command permissives, alarm occurrence IDs and carton accounting.',
+    'Build in XAE, exercise transitions in an isolated XAR and measure PLC task timing.',
   ],
   [
-    '02',
-    'Application service',
-    'C# · ASP.NET Core',
-    'Serializes command requests, polls a typed machine adapter and timestamps changes for the operator log.',
+    'XTS and XPlanar',
+    'Ten cart identities, six planar mover identities and an occupied-to-empty handoff.',
+    'Configure track geometry, tiles, movers and axes. Bind routed moves and wait for arrival, traffic clearance and fault feedback.',
   ],
   [
-    '03',
-    'Machine unit',
-    'TwinCAT · SPT / PackML',
-    'Owns unit mode, transition authority, station order and the finished-carton counter.',
+    'Paired servo axes',
+    'Eight X/Z cam pairs share a virtual master. ST-06 follows the carton for leaflet insertion.',
+    'Select drives and mechanics, set scaling and limits, configure NC coupling and cam tables. Measure following error and clearance under load.',
   ],
   [
-    '04',
-    'Mechanism',
-    'Station · Cylinder',
-    'Turns one step request into an outstroke and return. The virtual forward and home limits end each movement.',
+    'Pneumatics and vision',
+    'ST-03 demands extension and checks its virtual limit. The seal inspector reads five fixture intensities.',
+    'Map valve and end sensors. Trigger a camera, set lighting and exposure, and validate pass/reject decisions on representative cartons.',
+  ],
+  [
+    'HMI and commissioning',
+    'React consumes one snapshot through C#. The ADS contract defines each command, result and feedback field.',
+    'Keep the contract where its semantics hold. Commission physical I/O, communications loss, safe motion and guarding on the selected equipment.',
   ],
 ];
 
 export function Architecture() {
+  const [topic, setTopic] = useState<(typeof topics)[number]>('Signal path');
+  const [source, setSource] = useState<'Portable' | 'ADS'>('Portable');
+  const ads = source === 'ADS';
   return (
-    <div className="engineering">
-      <section className="panel">
-        <div className="panel-head">
-          <h2>Control architecture</h2>
-          <Icon name="design" />
+    <div className="engineering arch">
+      <section className="panel arch-intro">
+        <div>
+          <h2>A virtual carton assembly line</h2>
+          <p>
+            Can a carton keep its identity, inspection results and route through
+            a high-speed assembly and packing cycle? This proof of concept lets
+            an engineer trace that question from an operator command to a
+            finished or rejected carton on a PC.
+          </p>
+          <p className="arch-byline">
+            Sergio Gallegos · Machine design, controls and software engineering
+          </p>
         </div>
-        <div className="layers">
-          {layers.map(([id, title, tech, description]) => (
-            <article key={id}>
-              <small>{id}</small>
-              <h3>{title}</h3>
-              <b>{tech}</b>
-              <p>{description}</p>
-            </article>
-          ))}
-        </div>
+        <figure>
+          <img
+            src="/continuous-line.png"
+            alt="Guarded XTS-style assembly loop and adjoining planar inspection table"
+          />
+        </figure>
       </section>
-      <div className="two-col">
-        <section className="panel prose">
-          <h2>Inside one 10 ms scan</h2>
-          <ol>
+      <div role="group" aria-label="Architecture topics" className="arch-tabs">
+        {topics.map((t) => (
+          <button
+            key={t}
+            aria-pressed={topic === t}
+            onClick={() => setTopic(t)}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+      {topic === 'Signal path' && (
+        <section className="panel arch-content">
+          <h2>Trace an operator command</h2>
+          <p>
+            Select a path to inspect its implementation. The live machine source
+            appears in the status header.
+          </p>
+          <div
+            className="arch-switch"
+            role="group"
+            aria-label="Inspect a machine source"
+          >
+            {(['Portable', 'ADS'] as const).map((s) => (
+              <button
+                key={s}
+                aria-pressed={source === s}
+                onClick={() => setSource(s)}
+              >
+                {s === 'Portable' ? 'Local simulation' : 'TwinCAT via ADS'}
+              </button>
+            ))}
+          </div>
+          <ol className="signal-flow">
             <li>
-              <code>MAIN</code> calls <code>FB_CartonCell.CyclicLogic()</code>.
-              The unit samples the ADS request word once and checks its sequence
-              and permissives.
+              <small>React / TypeScript</small>
+              <h3>Operator console</h3>
+              <p>
+                Run line posts to <code>/api/commands</code>. The HMI polls{' '}
+                <code>/api/machine</code> for the resulting state and positions.
+              </p>
             </li>
             <li>
-              The SPT base dispatches the active PackML state method. In{' '}
-              <code>Execute()</code>, the unit calls one station’s{' '}
-              <code>Step()</code>.
+              <small>C# / ASP.NET Core</small>
+              <h3>ConsoleService</h3>
+              <p>
+                The service checks and serializes requests, then polls the
+                adapter selected at startup through <code>IMachine</code>.
+              </p>
             </li>
             <li>
-              The station asks its cylinder to extend until the forward limit,
-              then retract until home. The fifth home confirmation completes an
-              automatic carton.
+              <small>{ads ? 'TwinCAT ADS.NET' : 'C# plant'}</small>
+              <h3>{ads ? 'AdsMachine' : 'SimulatedMachine'}</h3>
+              <p>
+                {ads
+                  ? 'Writes one command word to GVL_HMI.Request and reads 106 DINTs from GVL_HMI.Status.'
+                  : 'Advances virtual 10 ms scans in the host. Positions, clamp limits and carton counts come from this local simulation.'}
+              </p>
             </li>
             <li>
-              The unit publishes one status array. The service decodes it into a
-              frame, and the HMI updates the diagram, model and controls.
+              <small>
+                {ads ? 'TwinCAT 3 / Structured Text' : 'Portable feedback'}
+              </small>
+              <h3>{ads ? 'FB_CartonCell' : 'Machine snapshot'}</h3>
+              <p>
+                {ads
+                  ? 'The PLC checks the request and lets SPT dispatch the PackML state. During Execute the unit advances the line model.'
+                  : 'The browser displays the carton ID, cam phase, inspection bits and output counts. This path runs without TwinCAT.'}
+              </p>
             </li>
           </ol>
-        </section>
-        <section className="panel prose">
-          <h2>Design patterns in the source</h2>
-          <h3>Template Method</h3>
+          <h3>Read the result</h3>
           <p>
-            <code>FB_CartonCell</code> extends <code>FB_PackML_BaseModule</code>
-            . The library dispatches state callbacks. The machine supplies its
-            sequence in <code>Execute</code> and signals{' '}
-            <code>StateComplete()</code>.
-          </p>
-          <h3>Composition</h3>
-          <p>
-            Five <code>FB_StrokeStation</code> instances each own a{' '}
-            <code>FB_VirtualCylinder</code>. Position and limit feedback stay
-            with the actuator. Station completion stays with the station.
-          </p>
-          <h3>Adapter and dependency injection</h3>
-          <p>
-            The C# host chooses <code>AdsMachine</code> or{' '}
-            <code>SimulatedMachine</code> behind <code>IMachine</code>. Both
-            present the same frame and accept the same command word.
+            On either path, watch one carton reach final packing. Its inspection
+            bits travel with its ID through the handoff. Packing consumes that
+            ID once and increments the good or reject count. A command
+            acknowledgment confirms how the controller handled the request.
+            Completion comes from subsequent feedback.
           </p>
         </section>
-      </div>
-      <section className="panel prose">
-        <h2>From device feedback to a routing decision</h2>
+      )}
+      {topic === 'PLC object model' && (
+        <section className="panel arch-content">
+          <h2>Who owns a scan?</h2>
+          <p>
+            One <code>FB_CartonCell</code> instance in <code>MAIN</code> owns
+            the unit. The TwinCAT PLC task calls its cyclic method every 10 ms
+            in the project configuration.
+          </p>
+          <dl className="object-map">
+            <div>
+              <dt>Inheritance</dt>
+              <dd>
+                <code>FB_CartonCell</code> extends{' '}
+                <code>SPT_BaseTypes.FB_PackML_BaseModule</code>. The unit
+                samples the request once, checks permissives and calls its base
+                implementation. SPT dispatches the active PackML state method.
+              </dd>
+            </div>
+            <div>
+              <dt>Composition</dt>
+              <dd>
+                During automatic <code>Execute()</code> the unit calls{' '}
+                <code>Line.Step()</code> on its <code>FB_ContinuousLine</code>.
+                The line owns the master pitch, eight cam pairs, carton IDs,
+                inspection masks and discharge counts.
+              </dd>
+            </div>
+            <div>
+              <dt>Device interface</dt>
+              <dd>
+                The line calls <code>Follow()</code> and <code>Home()</code>{' '}
+                through <code>I_LineClamp</code>. Its <code>FB_LineClamp</code>{' '}
+                supplies simulated position feedback. ST-03 checks for 16 mm of
+                travel before it credits the insert.
+              </dd>
+            </div>
+            <div>
+              <dt>Inspection and events</dt>
+              <dd>
+                The line asks <code>FB_SealInspection</code> for a verdict and
+                records it on the carton. A missing clamp limit has a different
+                consequence. After 15 executing scans it triggers F02, the unit
+                requests Abort and <code>FB_LineEvents</code> reports the
+                occurrence to TwinCAT EventLogger in the PLC design.
+              </dd>
+            </div>
+          </dl>
+          <h3>Try the interaction</h3>
+          <p>
+            With the line running, choose <strong>Jam insert clamp</strong> in
+            Diagnostics. Follow the missing end limit, the PackML abort and the
+            occurrence acknowledgment. The same objects explain the recovery
+            path from obstruction removal through Clear and Reset.
+          </p>
+        </section>
+      )}
+      {topic === 'Hardware migration' && (
+        <section className="panel arch-content">
+          <h2>From software model to a commissioned machine</h2>
+          <p>
+            The main TwinCAT project contains a PLC task and a virtual plant.
+            XTS, XPlanar, servo and camera labels describe modeled equipment.
+            Even on a test PLC, the supplied application calculates feedback in
+            software. Direct field control requires a separately engineered
+            configuration.
+          </p>
+          <div className="migration-list">
+            {migration.map(([area, model, field]) => (
+              <article key={area}>
+                <h3>{area}</h3>
+                <div>
+                  <small>Reusable concept</small>
+                  <p>{model}</p>
+                </div>
+                <div>
+                  <small>Field engineering</small>
+                  <p>{field}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+          <p>
+            <strong>Verification boundary.</strong> CartonPLC was built in XAE
+            and run on a local TwinCAT Usermode Runtime. The HMI exchanged
+            commands and feedback with the PLC over ADS. The throughput and cam
+            traces describe the virtual mechanisms.
+          </p>
+        </section>
+      )}
+      <section className="panel arch-content">
+        <h2>Engineering workflow</h2>
         <p>
-          <code>FB_CellDevices</code> composes a feed axis, carrier, two shuttle
-          coordinates and a seal inspector. A station remains selected while its
-          carrier indexes. The inspection samples the closure once at the
-          forward limit. The discharge logic counts a carton only after reading
-          that latched verdict.
+          The machine layout defines where a carton can transfer. The controls
+          define when it may transfer. The software makes that decision
+          observable through inspection masks, alarms and test traces. FreeCAD
+          holds the solid assembly and Blender supplies the browser model.
         </p>
         <p>
-          The portable plant advances positions on simulated 10 ms ticks. The
-          native labs show where to substitute NC axis references, a simulated
-          XTS processing unit, planar mover command feedback and a Vision File
-          Source. The Device labs page displays the same status block as the
-          operator screen.
-        </p>
-        <h2>Reuse this cell</h2>
-        <p>
-          Start with one carton in automatic mode. Switch to manual while
-          Stopped to isolate one station. Trace the request in{' '}
-          <code>server/Machine.cs</code>, <code>E_ConsoleCommand.TcDUT</code>{' '}
-          and <code>FB_CartonCell.ApplyCommand</code>. Extend the station
-          sequence and shared geometry together when adding a mechanism.
-        </p>
-        <p>
-          See <code>docs/architecture.md</code> for extension points,{' '}
-          <code>docs/ads.md</code> for the wire layout and{' '}
-          <code>docs/commissioning.md</code> for the validation sequence.
+          OpenAI Codex assisted with implementation, debugging, test automation
+          and documentation. The engineer owns design choices, reviews the
+          evidence and determines what needs physical validation.
         </p>
       </section>
     </div>

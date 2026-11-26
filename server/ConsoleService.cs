@@ -10,7 +10,10 @@ public sealed class ConsoleService(IMachine machine, IConfiguration config, ILog
     private readonly object gate = new();
     private readonly Queue<ConsoleEvent> history = new();
     private Frame? current;
+    private readonly Guid session = Guid.NewGuid();
+    private readonly Queue<ConsoleEvent> alarmHistory = new();
     private long eventId;
+    private int previousRecovery;
     private long heartbeatAt;
     private int? pending;
     private long pendingAt;
@@ -19,7 +22,13 @@ public sealed class ConsoleService(IMachine machine, IConfiguration config, ILog
 
     private void Log(string kind, string text)
     {
-        history.Enqueue(new(++eventId, DateTimeOffset.UtcNow, kind, text));
+        var entry = new ConsoleEvent(++eventId, DateTimeOffset.UtcNow, kind, text);
+        history.Enqueue(entry);
+        if (text.StartsWith("F02 #", StringComparison.Ordinal))
+        {
+            alarmHistory.Enqueue(entry);
+            if (alarmHistory.Count > 128) alarmHistory.Dequeue();
+        }
         while (history.Count > 60)
         {
             history.Dequeue();
@@ -64,6 +73,21 @@ public sealed class ConsoleService(IMachine machine, IConfiguration config, ILog
         if (current?.Devices.Inspection != next.Devices.Inspection && next.Devices.Inspection != SealResult.Pending)
         {
             Log("Inspection", $"Seal {next.Devices.Inspection} · {next.Devices.BrightSamples}/5 bright samples");
+        }
+
+        if (next.Line is { } line && current?.Line is { } previous)
+        {
+            if (line.Occurrence != previous.Occurrence) Log("Fault", $"F02 #{line.Occurrence} · ST-03 clamp extend timeout");
+            if (line.Alarm == 2 && previous.Alarm == 1) Log("Alarm", $"F02 #{line.Occurrence} · acknowledged");
+            if (!line.Jammed && previous.Jammed && line.Alarm != 0) Log("Recovery", $"F02 #{line.Occurrence} · obstruction removed");
+            if (line.Alarm == 0 && previous.Alarm > 0) Log("Recovery", $"F02 #{line.Occurrence} · cleared");
+            if (next.State == CellState.Idle && previousRecovery != 0)
+            {
+                Log("Recovery", $"F02 #{previousRecovery} · reset complete");
+                previousRecovery = 0;
+            }
+            if (line.Alarm != 0) previousRecovery = line.Occurrence;
+            if (line.LastId != previous.LastId) Log("Discharge", $"Carton {line.LastId} · {(line.LastFailed == 0 && line.LastChecked == 1023 ? "packed" : "reject")} · checks 0x{line.LastChecked:X3}");
         }
 
         if (pending == next.Ack)
@@ -124,6 +148,8 @@ public sealed class ConsoleService(IMachine machine, IConfiguration config, ILog
         {
             return new
             {
+                session,
+                alarms = alarmHistory.Reverse().ToArray(),
                 source = config["Machine:Source"],
                 online,
                 issue,
@@ -151,7 +177,7 @@ public sealed class ConsoleService(IMachine machine, IConfiguration config, ILog
         }
     }
 
-    public IResult Command(OperatorCommand command)
+    public IResult Command(OperatorCommand command, int? occurrence)
     {
         lock (gate)
         {
@@ -164,6 +190,12 @@ public sealed class ConsoleService(IMachine machine, IConfiguration config, ILog
                 }
                 // A single DINT couples the command with its acknowledgment token.
                 int sequence = ((current.Ack >> 8) % 0x7ffffe) + 1;
+                if (command == OperatorCommand.AckClamp)
+                {
+                    if (occurrence is null || occurrence != current.Line?.Occurrence)
+                        return Results.Conflict("The alarm occurrence has changed.");
+                    sequence = occurrence.Value;
+                }
                 pending = (sequence << 8) | (int)command;
                 pendingAt = Stopwatch.GetTimestamp();
                 machine.Write(pending.Value);

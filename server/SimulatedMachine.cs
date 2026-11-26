@@ -1,25 +1,31 @@
-using System.Diagnostics;
-
 namespace CartonCell;
 
 /// <summary>A portable, 10 ms teaching model of the PLC's virtual mechanism.</summary>
 public sealed class SimulatedMachine : IMachine
 {
-    private readonly Stopwatch clock = Stopwatch.StartNew();
+    private readonly TimeProvider clock;
+    private readonly long started;
+
+    public SimulatedMachine(TimeProvider? time = null)
+    {
+        clock = time ?? TimeProvider.System;
+        started = clock.GetTimestamp();
+    }
     private long lastTick;
     private int actingTicks;
     private readonly CellDevices devices = new();
+    private readonly ContinuousLine line = new();
     private Frame frame = Frame.Initial;
 
     public Frame Read()
     {
-        long tick = clock.ElapsedMilliseconds / 10;
+        long tick = clock.GetElapsedTime(started).Ticks / TimeSpan.TicksPerMillisecond / 10;
         while (lastTick < tick)
         {
             Step();
             lastTick++;
         }
-        return frame with { Heartbeat = (int)(tick % int.MaxValue), Devices = devices.Feedback };
+        return frame with { Heartbeat = (int)(tick % int.MaxValue), Devices = devices.Feedback, Line = line.Snapshot() };
     }
 
     private void Enter(CellState target)
@@ -30,6 +36,13 @@ public sealed class SimulatedMachine : IMachine
 
     private void Step()
     {
+        line.Clock(frame.State == CellState.Execute && !frame.Manual && line.Enabled);
+        if (frame.State == CellState.Execute && !frame.Manual && line.Enabled)
+        {
+            line.Step(devices.Feedback.MissingSeal);
+            if (line.Alarm != 0) Enter(CellState.Aborting);
+            return;
+        }
         if (frame.State == CellState.Execute)
         {
             int phase = Math.Min(200, frame.Phase + 1);
@@ -86,6 +99,7 @@ public sealed class SimulatedMachine : IMachine
     public void Write(int request)
     {
         frame = Read();
+        if (frame.Ack == request) return;
         var command = (OperatorCommand)(request & 255);
         frame = frame with { Ack = request, Accepted = frame.Allows(command) };
         if (!frame.Accepted)
@@ -94,6 +108,22 @@ public sealed class SimulatedMachine : IMachine
         }
         switch (command)
         {
+            case OperatorCommand.LoopLine:
+            case OperatorCommand.Bench:
+                line.Timing = false;
+                line.Enabled = command == OperatorCommand.LoopLine;
+                break;
+            case OperatorCommand.Standard:
+            case OperatorCommand.Precision:
+                line.Precision = command == OperatorCommand.Precision;
+                break;
+            case OperatorCommand.JamClamp:
+            case OperatorCommand.ReleaseClamp:
+                line.Jammed = command == OperatorCommand.JamClamp;
+                break;
+            case OperatorCommand.AckClamp:
+                frame = frame with { Accepted = line.Acknowledge(request >> 8) };
+                break;
             case OperatorCommand.DropAir:
                 frame = frame with { AirFault = true };
                 if (frame.State is not (CellState.Aborted or CellState.Aborting))
@@ -116,26 +146,31 @@ public sealed class SimulatedMachine : IMachine
                 break;
             case OperatorCommand.Automatic:
             case OperatorCommand.Manual:
+                line.Timing = false;
                 frame = frame with { Manual = command == OperatorCommand.Manual };
                 break;
             case OperatorCommand.Start:
             case >= OperatorCommand.Stroke1 and <= OperatorCommand.Stroke5:
+                line.Timing = !frame.Manual && line.Enabled;
                 int station = frame.Manual ? (int)command - (int)OperatorCommand.Stroke1 + 1 : 1;
-                frame = frame with { Station = station, Phase = 0 };
+                frame = frame with { Station = !frame.Manual && line.Enabled ? 0 : station, Phase = 0 };
                 Enter(CellState.Starting);
                 break;
             case OperatorCommand.Reset:
+                line.Reset();
                 devices.Reset();
                 frame = frame with { Station = 0, Phase = 0 };
                 Enter(CellState.Resetting);
                 break;
             case OperatorCommand.Clear:
+                line.Recover();
                 Enter(CellState.Clearing);
                 break;
             case OperatorCommand.Abort:
                 Enter(CellState.Aborting);
                 break;
             case OperatorCommand.Stop:
+                line.Timing = false;
                 Enter(CellState.Stopping);
                 break;
             case OperatorCommand.Hold:

@@ -27,10 +27,15 @@ public sealed class CellDevices
     }
 
     // The two 8-bit scan lines correspond to the BMP fixtures in web/public/vision.
+    internal static int BrightSamples(bool missingSeal)
+    {
+        int[] pixels = missingSeal ? [118, 122, 120, 124, 121] : [231, 236, 228, 239, 232];
+        return pixels.Count(value => value >= 200);
+    }
+
     private void Inspect()
     {
-        int[] pixels = Feedback.MissingSeal ? [118, 122, 120, 124, 121] : [231, 236, 228, 239, 232];
-        int bright = pixels.Count(value => value >= 200);
+        int bright = BrightSamples(Feedback.MissingSeal);
         Feedback = Feedback with
         {
             BrightSamples = bright,

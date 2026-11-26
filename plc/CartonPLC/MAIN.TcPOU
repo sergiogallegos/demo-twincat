@@ -5,7 +5,7 @@
 VAR
     Cell : FB_CartonCell := (Name := 'Carton Cell');
 END_VAR]]></Declaration>
-    <Implementation><ST><![CDATA[Cell.CyclicLogic();]]></ST></Implementation>
+    <Implementation><ST><![CDATA[Cell.RunScan();]]></ST></Implementation>
 
   </POU>
 </TcPlcObject>

@@ -30,6 +30,8 @@ npm --prefix web run build
 
 Object names `Moving0_` through `Moving4_` identify rods/tools. `Cargo0_` through `Cargo4_` identify the carton stages. Keep the mesh origins at the primitive centers. Verify the exported model with a full automatic cycle after a geometry change.
 
+Use the [continuous CAD rebuild instructions](docs/mechanical.md#regenerate-the-assets) for the loop profile. Record the exact verification and task ID on the [shared board](docs/board.md).
+
 ## Publishing media
 
-The captioned [76-second MP4](docs/media/carton-cell-demo.mp4) is the shareable walkthrough. Full-resolution PNGs for the README and social posts are in [docs/images](docs/images). Capture the Overview during loading, the PackML diagram during a hold, and Diagnostics after a simulated pressure loss. Capture PLC source from the current function block and identify the method in the image. Keep local computer names and target addresses out of public captures.
+The [continuous-line walkthrough](docs/media/continuous-line.webm) shows the live header, bottom command dock, transport, flying cam, planar handoff, and clamp recovery. The [76-second MP4](docs/media/carton-cell-demo.mp4) covers the older single-carton bench. Full-resolution PNGs for the README and social posts are in [docs/images](docs/images). Capture the Overview during loading, the PackML diagram during a hold, and Diagnostics after a simulated pressure loss. Capture PLC source from the current function block and identify the method in the image. Keep local computer names and target addresses out of public captures.

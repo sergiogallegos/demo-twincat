@@ -1,130 +1,114 @@
 # Carton Cell
 
-A hardware-free packaging-machine proof of concept by **Sergio Gallegos**. A servo meters a blank, an XTS carrier indexes it through five pneumatic stations, a seal inspection classifies the carton, and an XPlanar shuttle sorts it. A custom web HMI shows the machine pose, PackML transitions, operator guidance and production counts.
+Carton Cell is a hardware-free proof of concept by **Sergio Gallegos** for learning TwinCAT machine-control architecture, SPT/PackML sequencing, ADS communication and operator diagnostics. **Every HMI command operates on a software model. Direct control of physical equipment is outside the scope of this project.**
 
-The reference implementation has two execution paths. A fresh clone runs a portable C# plant. With a TwinCAT target, the same HMI uses ADS and the PLC executes the SPT/PackML unit and virtual devices. Separate native labs exercise Beckhoff motion and vision APIs.
+The model represents ten XTS carts, eight pick-and-place stations with paired servo axes, and six XPlanar movers for inspection and final packing. A separate five-station bench supports single-carton and manual exercises.
 
-![Carton Cell operator console running an automatic cycle](docs/images/machine-overview.png)
+| Test mode | Machine source | What runs |
+| --- | --- | --- |
+| HMI only | Simulation | React and the local C# model on the PC. No TwinCAT installation required. |
+| HMI + local TwinCAT | ADS | The same web app reads the CartonPLC application executing in a TwinCAT runtime on the engineering PC. |
+| HMI + PLC target | ADS | The web app runs on the PC and reads CartonPLC on a selected test PLC over a trusted ADS route. The mechanisms still run as software models. |
 
-[Run locally](#run-the-simulation) · [Architecture](#software-architecture) · [Demonstration video](#demonstration-video)
+In the main Carton Cell solution, the XAE project tree contains the PLC task and application. The XTS, servo and XPlanar labels on the HMI identify simulated mechanisms. The project has no native motion axes or mapped field outputs.
 
-## Objectives
+![Live HMI connected over ADS to the CX PLC, showing the guarded assembly cell in Execute](docs/images/cx-guarded-cell.png)
 
-- Demonstrate how SPT owns the PackML unit lifecycle while application function blocks own the machine sequence, station behavior and device feedback.
-- Trace a command from a TypeScript UI through a C# service and ADS to the PLC, then trace the acknowledgment and physical-unit feedback back to the screen.
-- Provide a reproducible commissioning exercise. A good seal and a missing seal produce different routes and independently verifiable counts.
+### Watch the physical PLC run the virtual cell
 
-## Technologies
+Both clips were recorded from the React HMI while CartonPLC ran on a physical Beckhoff CX50x0. The C# service read live feedback over ADS. A separate timed run counted 30 good simulated cartons at final discharge in 59.953 seconds. [Commissioning results](docs/commissioning.md#observed-two-second-cycle)
 
-| Layer | Implementation |
+| Clip | Screenshots from the same run |
 | --- | --- |
-| Machine control | TwinCAT 3 Structured Text, SPT Base Types 3.9.0, Tc3_PackML_V2, 10 ms cyclic task |
-| Device models | Servo feed, XTS indexing, five pneumatic tools, grayscale seal inspection, two-axis XPlanar sorter |
-| HMI service | C#, .NET 10, ASP.NET Core, Beckhoff ADS .NET, typed machine adapters |
-| Operator interface | React, strict TypeScript, Vite, Three.js, WebGL 2, Prettier |
-| Mechanical design | Editable FreeCAD and Blender assemblies, glTF export, optional manufacturer STEP meshes |
-| Verification | HTTP acceptance sequence, PLC/ADS contract checks, CAD and image-fixture checks, CI workflow |
+| [Production and inspection · 19 s, MP4](docs/media/cx-production.mp4) | [Carton flow and counters](docs/images/cx-production.png) · [Assembly feedback](docs/images/cx-assembly.png) · [Planar inspection](docs/images/cx-planar.png) |
+| [3D machine tour · 20 s, MP4](docs/media/cx-machine-tour.mp4) | [Guarded cell](docs/images/cx-guarded-cell.png) · [Insert tooling cutaway](docs/images/cx-insert-tooling.png) |
 
-## Software architecture
+The portable simulator walkthrough also shows clamp fault injection and operator recovery. [Watch the walkthrough](docs/media/continuous-line.webm) · [Inspect the alarm](docs/images/continuous-line-alarm.png) · [Trace the architecture](docs/images/continuous-line-architecture.png) · [View the CAD render](web/public/continuous-line.png)
 
-```mermaid
-flowchart TB
-    UI["React operator console · 3D view · PackML diagram"]
-    Host["C# ConsoleService · command arbitration and event history"]
-    Port["IMachine"]
-    Ads["AdsMachine"]
-    Sim["SimulatedMachine · portable plant"]
-    Unit["FB_CartonCell · SPT / PackML unit"]
-    Station["5 × FB_StrokeStation → FB_VirtualCylinder"]
-    Devices["FB_CellDevices · feed, carrier, inspector, sorter"]
-    UI -->|"HTTP commands"| Host
-    Host -->|"snapshot and permitted actions"| UI
-    Host --> Port
-    Port -->|"Simulation"| Sim
-    Port -->|"ADS"| Ads
-    Ads -->|"request word"| Unit
-    Unit -->|"80-byte status block"| Ads
-    Unit --> Station
-    Unit --> Devices
-```
+## Why build the cell before buying hardware?
 
-**Design decisions**
+Can the machine keep track of a carton through assembly, inspection and a handoff while other cartons stay in motion? This personal project brings together machine-building experience, industrial controls and software architecture to test that question on a laptop. To see the design in action, follow one carton ID to discharge. Then jam the insert clamp and observe which object detects the missing feedback, which layer requests a PackML abort and how the operator recovers.
 
-- **One owner of machine state.** In ADS mode, the PLC validates each request and advances the cycle. The browser moves the model from reported position feedback. Closing the browser leaves the machine sequence running.
-- **One carton in flight.** This makes a complete product trace observable. A station remains selected until its cylinder is home and the next carrier position is confirmed. Manual mode isolates one station and preserves the production count.
-- **A command has an identity.** One DINT contains its sequence and operation. The PLC echoes the consumed word. The HMI distinguishes submission, acknowledgment, state transition and process completion.
-- **An inspection belongs to a carton.** The closing tool triggers the inspection once. Its latched result selects Y +120 mm or −120 mm and determines which counter advances at discharge.
+The **Architecture** tab traces a command from React and TypeScript through ASP.NET Core, compares the portable plant with the TwinCAT ADS.NET path, and explains how the Structured Text function blocks collaborate. Its hardware migration view identifies the configuration, devices and measurements needed for physical commissioning. OpenAI Codex assisted with implementation, debugging, test automation and documentation. Engineering judgment governs the requirements, design choices and interpretation of the results.
 
-[Architecture and extension guide](docs/architecture.md) · [Engineering walkthrough](docs/design-review.md) · [ADS wire contract](docs/ads.md)
+The portable demo runs without a TwinCAT installation. For the separate PC-based TwinCAT exercises, basic PLC engineering is free, and many TwinCAT functions offer renewable seven-day trial licenses for engineering and laboratory use. Check the selected function and target when preparing a lab. [Beckhoff engineering licensing](https://infosys.beckhoff.com/content/1033/tc3_licensing/179888523.html) · [Beckhoff TwinCAT licensing](https://www.beckhoff.com/en-en/products/automation/twincat/twincat-3-licensing/)
 
-## Run the simulation
+## Start the HMI in one of three modes
 
-Install **Git**, a **.NET 10 SDK**, **Node.js 22 with npm**, and a browser with WebGL 2. The first build needs package access. The built HMI serves the model and frontend assets locally. The default simulator can run without TwinCAT, FreeCAD or Blender.
+Install a .NET 10 SDK, Node.js 22 with npm, and a browser. Build the web assets once from the repository root.
 
 ```sh
-git clone https://github.com/sergiogallegos/demo-twincat.git
-cd demo-twincat
 npm --prefix web ci
 npm --prefix web run build
-dotnet run --project server
 ```
 
-Open [the local operator console](http://127.0.0.1:5080). Verify **Connected · Local simulation**, select **Reset cell**, wait for **Idle**, then select **Start cycle**. An automatic carton takes approximately thirteen seconds plus the PackML entry and completion transitions. Reset prepares the next carton. Ctrl+C stops the host.
+### 1. HMI only
 
-| Exercise | What to do and observe |
+Start the web service and its C# machine simulator in one process.
+
+```powershell
+dotnet run --project server -- --Machine:Source=Simulation
+```
+
+### 2. HMI with TwinCAT on this PC
+
+Open `plc/CartonCell.sln` in XAE, select the **local runtime**, resolve the PLC libraries, and build CartonPLC. Activate the configuration on that local test runtime, log in to CartonPLC, download it and start the PLC application. Record the six-field AMS Net ID from the selected target. For a Usermode Runtime, start that instance and use its own target Net ID. [PLC setup and libraries](docs/commissioning.md) · [Beckhoff Usermode Runtime startup](https://infosys.beckhoff.com/content/1033/tc170x_tc3_usermode_runtime/16309329035.html)
+
+```powershell
+$localNetId = Read-Host 'AMS Net ID of the local TwinCAT runtime selected in XAE'
+dotnet run --project server -- --Machine:Source=Ads --Machine:AmsNetId=$localNetId --Machine:Port=851
+```
+
+### 3. HMI with TwinCAT on a PLC target
+
+Keep the web service on your engineering PC. In XAE, establish an authorized ADS route with the intended test PLC, select that target and its platform, build, activate, download CartonPLC and start it there. Activation can replace the target configuration. Use a designated test PLC. Enter **the target PLC’s** AMS Net ID when launching the web service. [Target commissioning](docs/commissioning.md)
+
+```powershell
+$plcNetId = Read-Host 'AMS Net ID of the test PLC selected in XAE'
+dotnet run --project server -- --Machine:Source=Ads --Machine:AmsNetId=$plcNetId --Machine:Port=851
+```
+
+Run one host on port 5080 at a time. Stop your previous host with Ctrl+C when switching. For either ADS mode, verify **Connected · ADS · PLC** in the header. In XAE, watch `GVL_HMI.Status[0]` for protocol **51003** and `GVL_HMI.Status[9]` for an advancing scan heartbeat. The target Net ID determines whether the PLC code runs locally or remotely. An unavailable ADS source appears offline.
+
+### Exercise the cell
+
+Open [the operator console](http://127.0.0.1:5080). In HMI-only mode the header reads **Connected · Local simulation**. Select **Reset cell**, wait for **Idle**, then **Run line**. In Standard the first output arrives after about 23 seconds of Execute. Once the line fills, the production target is one good carton every two seconds (30/min) during uninterrupted Execute. Measured output rates for the portable simulator and local TwinCAT runtime are in the [commissioning results](docs/commissioning.md#observed-two-second-cycle). Select a mover to see its carton ID and inspection masks. Select **3D** to orbit the guarded cell. **Operator panel** frames the suspended touchscreen, its corner mount and the local post controls. **Insert tooling** and **Vision table** use a cutaway to expose the moving mechanisms. Use **Cutaway** to switch the guarding layer in any camera view. Switch to **Device labs** to read all eight axis pairs or the six planar mover coordinates. The live status header and machine controls stay visible across tabs. The C# service keeps the plant running when the browser closes.
+
+| Try it | What to observe |
 | --- | --- |
-| Locate the motion devices | Under **Overview → Machine simulation**, select **Feed servo** at the blank infeed, **XTS mover** on the front rail or **XPlanar shuttle** on the discharge tiles. Each button follows its device and shows its reported position. **Reset view** returns to the complete machine. |
-| Hold or suspend | During Execute, select **Hold** or **Suspend**. Check the highlighted branch on **PackML states**. Resume or Unsuspend continues the interrupted stroke. |
-| Manual control | Select **Stop**, wait for Stopped, switch to **Manual** and reset. Select a station and **Single stroke**. Only its cylinder moves. |
-| Inspect and sort | In Diagnostics select **Remove seal** before the next cycle. In **Device labs**, observe Reject, zero bright samples and Y −120 mm. Restore the seal for the next carton. |
-| Recover a fault | In Diagnostics select **Drop air supply**. F01 aborts the machine. **Restore air → Clear abort → Reset cell** returns it to Idle. |
-| Warning and messages | Select **Lower blank stock**, add a shift note, then **Refill magazine**. Check the warning, note and recovery in the event log. |
+| Hold and Resume | Every cart, cam and workpiece freezes and resumes from the same master phase. |
+| Simulate a missing seal | In Diagnostics select **Remove seal**. Cartons inspected at the planar camera carry the failure through final packing. Restore the fixture and observe subsequent good cartons. |
+| Jam a clamp | Select **Jam insert clamp**. On a demanded ST-03 extension, F02 trips after 150 ms of missing feedback. Acknowledge that occurrence and remove the obstruction, then Clear and Reset. |
+| Change recipe | Stop, select **Precision**, Reset, Run. The pitch stays at 2 s and the Z stroke increases from 40 to 48 mm. The production totals survive the change. |
+| Exercise one station | While Stopped select **Single-carton bench** or **Manual bench**. The older five-station model, manual strokes and PackML Complete path are available here. [Bench walkthrough](docs/media/carton-cell-demo.mp4) |
+| Export a report | Run `python scripts/line_report.py --seconds 30` against the local service. Open the resulting CSV or query the SQLite samples and events. |
 
-For automated checks, start a fresh simulator, then run `python scripts/verify_contract.py` and `python scripts/smoke.py` from a second terminal. Python 3.10+ is sufficient.
+## Control and motion
 
-## TwinCAT and native device labs
+The automatic line runs a 10 ms virtual scan. Eight two-axis servo pairs follow a common electronic cam. ST-06 follows its moving cart during insertion. A virtual pneumatic clamp reports stroke feedback independently of its command. Each product carries eight assembly check bits, a planar verification bit and a vision bit. One transfer moves the product identity and its results together. Final packing consumes the identity once and increments the appropriate counter.
 
-Open [CartonCell.sln](plc/CartonCell.sln) in XAE. The [commissioning guide](docs/commissioning.md) covers the pinned SPT checkout, library registration, XAR test target, TC1200 runtime, ADS route and startup sequence. The [native device labs](docs/device-labs.md) cover simulated NC axes, XTS, XPlanar mover feedback and a camera-free Vision File Source. They also include the workflow for five optional Beckhoff STEP components.
+The default C# plant and optional TwinCAT Structured Text implementation expose the same snapshot. In ADS mode the PLC owns the SPT/PackML state, permissives, motion and counts. ASP.NET Core serializes requests and reads the 424-byte status image. React and TypeScript render feedback, diagnostics, a sampled servo scope and production metrics. The simulated rates describe the model. Actual motion, payload, clearance, camera exposure and real-time performance require engineering on a selected target.
 
-If the IDE reports an unsupported project type when opening the solution, follow the [XAE Shell troubleshooting steps](docs/commissioning.md#xae-reports-the-application-which-this-project-type-is-based-on-was-not-found).
+## Engineering and verification
 
-## Screenshots
-
-| PackML hold path | PLC sequence |
+| Resource | What it contains |
 | --- | --- |
-| [![Held state, command paths and active station](docs/images/packml-states.png)](docs/images/packml-states.png) | [![Source listing from FB_CartonCell.Execute](docs/images/plc-sequence.png)](docs/images/plc-sequence.png) |
-| **Fault recovery** | **Inspection and routing** |
-| [![Pressure-loss fault and operator note](docs/images/diagnostics.png)](docs/images/diagnostics.png) | [![XPlanar reject-lane feedback](docs/images/device-labs.png)](docs/images/device-labs.png) |
+| [Architecture](docs/architecture.md) | PLC OOP ownership, cam timing, workpiece identity, inspection, OEE and extension points |
+| [ADS contract](docs/ads.md) | Protocol 51003, complete word layout, command IDs and occurrence-aware acknowledgments |
+| [Commissioning](docs/commissioning.md) | Laptop acceptance, optional XAE/XAR or Beckhoff test PLC and troubleshooting |
+| [Mechanical package](docs/mechanical.md) | Native FreeCAD/Blender models, glTF asset, dimensioned layout and official STEP references |
+| [Native Beckhoff labs](docs/device-labs.md) | NC axes, XTS, XPlanar and TwinCAT Vision File Source exercises |
+| [Task board](docs/board.md) | Delivered work, verification evidence, open engineering tasks and human/agent handoff |
+| [Project guide](AGENTS.md) | Contribution workflow and subsystem ownership |
 
-[Architecture screen](docs/images/architecture.png) · [Full-resolution media](docs/images)
+```sh
+python scripts/verify_contract.py
+dotnet run --project tests/LineBench
+# Run these against a fresh local simulation host, in order.
+python scripts/smoke_line.py --measure-rate
+python scripts/smoke.py
+```
 
-## Validation, limitations and next improvements
+The deterministic benchmark exercises 60,000 scans, carton conservation, flying synchronization, Hold, reject, recovery and recipe changes. The HTTP tests use the same requests as the HMI. With a local ADS router, `dotnet run --project tests/AdsLoopback` tests the real transport against an isolated synthetic peer. To check the active simulator or PLC, run `python scripts/measure_rate.py` during uninterrupted continuous production with a good seal. It measures 30 good-carton intervals at the HMI endpoint using elapsed wall-clock time. Local PLC commissioning evidence is recorded on the task board.
 
-| Scope | Current evidence or boundary | Next improvement |
-| --- | --- | --- |
-| Portable machine and HMI | Automatic and manual cycles, hold/resume, suspension, fault recovery, both inspection routes and counters are exercised over HTTP. Desktop and mobile layouts were checked in a browser. | Add regression scenarios for additional product recipes and station faults. |
-| PLC and ADS | The ADS adapter passed a local-router round trip against an isolated symbol server. It resolved both names, read the 80-byte block, wrote and acknowledged a command, and reacquired handles. Project structure and command IDs also have static checks. XAE compilation, download and live PLC commissioning remain acceptance items on the target installation. | Record a versioned XAE build and runtime trace with the same accept/reject sequence. |
-| Device behavior | The core uses one virtual carrier, ideal end limits, bounded axis increments and two deterministic image fixtures. Native labs require their matching TwinCAT functions. | Add a native device adapter at a time and compare actual feedback, timeout and recovery behavior against the virtual plant. |
-| HMI deployment | The host binds to loopback. Fault injection is enabled for teaching, and history is a 60-entry session buffer. | Add authenticated roles and persistent event storage before multi-operator deployment. |
-| Mechanical model | The assemblies illustrate the process and signal mapping. Physical clearances, safety functions and performance require machine-specific validation. | Verify the mechanism and safety design against a selected physical configuration. |
-
-## Repository guide
-
-| Directory | Contents |
-| --- | --- |
-| [plc](plc) | TwinCAT system, PLC task, unit, stations and devices |
-| [server](server) | ASP.NET Core host, ADS adapter, simulator and operator messages |
-| [web](web) | HMI source, animated model, inspection fixtures and styling |
-| [cad](cad) | Native FreeCAD and Blender files, shared geometry and exporters |
-| [labs](labs) | Original native planar sorting and Vision inspection exercises |
-| [tests/AdsLoopback](tests/AdsLoopback) | Repeat the ADS transport verification with a local router and an isolated test peer. |
-| [scripts](scripts) | Contract and acceptance tests, native sample preparation and STEP retrieval |
-| [docs](docs) | Setup, design rationale, interfaces, commissioning and review media |
-
-[Contributor guide](CONTRIBUTING.md) · [MIT license](LICENSE) · [Vendor notices](NOTICES.md)
-
-## Demonstration video
-
-[**Watch or download the 76-second captioned walkthrough (MP4)**](docs/media/carton-cell-demo.mp4). The recording follows an automatic cycle, a PackML hold, the accept and reject lanes, an air-pressure fault and the engineering guide. It uses the running C# simulation and web HMI.
-
-[![Open the Carton Cell demonstration video](docs/images/machine-overview.png)](docs/media/carton-cell-demo.mp4)
+[MIT license](LICENSE) · [Beckhoff, SPT Framework and PackML notices](NOTICES.md)

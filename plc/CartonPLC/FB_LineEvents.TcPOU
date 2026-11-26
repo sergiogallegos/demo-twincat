@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_LineEvents" Id="{CB31703C-BDF0-4A15-AF15-000000000016}">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_LineEvents
+VAR_INPUT
+    Occurrence, Alarm : DINT;
+    Jammed, Idle : BOOL;
+END_VAR
+VAR
+    Event : Tc3_EventLogger.FB_TcAlarm;
+    Recovery : Tc3_EventLogger.FB_TcMessage;
+    Created, MessageCreated, Confirmed, Cleared, Recovered : BOOL;
+    Seen : DINT;
+END_VAR]]></Declaration>
+    <Implementation><ST><![CDATA[IF NOT Created THEN Created := Event.CreateEx(TC_EVENTS.CartonLine.ClampTimeout, TRUE, 0) = 0; END_IF
+IF NOT MessageCreated THEN MessageCreated := Recovery.CreateEx(TC_EVENTS.CartonLine.LineRecovered, 0) = 0; END_IF
+IF Created AND (Occurrence <> Seen) THEN
+    Event.ipArguments.Clear().AddDInt(Occurrence);
+    IF Event.Raise(0) = 0 THEN Seen := Occurrence; Confirmed := FALSE; Cleared := FALSE; Recovered := FALSE; END_IF
+END_IF
+IF (Seen <> 0) AND (Seen = Occurrence) THEN
+    IF (Alarm = 2) AND NOT Confirmed THEN Confirmed := Event.Confirm(0) = 0; END_IF
+    IF NOT Jammed AND NOT Cleared THEN Cleared := Event.Clear(0, FALSE) = 0; END_IF
+    IF MessageCreated AND Idle AND (Alarm = 0) AND NOT Recovered THEN
+        Recovery.ipArguments.Clear().AddDInt(Occurrence);
+        Recovered := Recovery.Send(0) = 0;
+    END_IF
+END_IF]]></ST></Implementation>
+
+  </POU>
+</TcPlcObject>

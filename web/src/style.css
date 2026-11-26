@@ -7,7 +7,7 @@
   --line: #d4dce2;
   --surface: #fff;
   --blue: #155ab3;
-  --nav: #16222d;
+  --nav: #fff;
   --green: #116642;
   --alarm: #9b2023;
   --radius: 8px;
@@ -91,17 +91,21 @@ h3 {
 .shell {
   display: grid;
   grid-template-columns: 195px minmax(0, 1fr);
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
 }
 .rail {
   background: var(--nav);
-  color: #f9fbfc;
+  color: var(--ink);
+  border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
   padding: 24px 12px 20px;
   position: sticky;
   top: 0;
-  height: 100vh;
+  height: 100%;
+  min-height: 0;
 }
 .brand {
   margin: 0 12px 30px;
@@ -130,7 +134,7 @@ h3 {
 .rail nav button {
   border: 0;
   background: transparent;
-  color: #c2cdd4;
+  color: #43505a;
   display: flex;
   align-items: center;
   text-align: left;
@@ -140,17 +144,18 @@ h3 {
   font-weight: 500;
 }
 .rail nav button:hover {
-  background: #243542;
-  color: white;
+  background: #f3f5f5;
+  color: var(--ink);
 }
 .rail nav button.active {
-  background: #273d50;
-  color: white;
-  box-shadow: inset 3px 0 #72adf6;
+  background: #edf1f0;
+  color: #182e30;
+  font-weight: 650;
+  box-shadow: inset 3px 0 #37665f;
 }
 .rail-bottom {
   margin-top: auto;
-  border-top: 1px solid #3b4750;
+  border-top: 1px solid var(--line);
   padding: 20px 10px 2px;
   display: grid;
   gap: 5px;
@@ -165,14 +170,22 @@ h3 {
   text-transform: uppercase;
 }
 .rail-bottom small {
-  color: #a6b7c6;
+  color: #586671;
 }
 .rail-bottom span {
   font-size: 12px;
-  color: #bfccd6;
+  color: #54616b;
 }
 main {
   min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+.page-scroll {
+  overflow: auto;
+  overscroll-behavior: contain;
+  min-height: 0;
 }
 .topbar {
   min-height: 58px;
@@ -698,7 +711,9 @@ code {
 }
 @media (max-width: 780px) {
   .shell {
-    display: block;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
   }
   .rail {
     position: static;
@@ -733,7 +748,7 @@ code {
     font-size: 12px;
   }
   .rail nav button.active {
-    box-shadow: inset 0 -3px #72adf6;
+    box-shadow: inset 0 -3px #37665f;
   }
   .rail-bottom {
     display: none;
@@ -945,4 +960,146 @@ code {
 .drive-views button[aria-pressed='true'] {
   background: #e4eef9;
   box-shadow: inset 0 -3px var(--blue);
+}
+
+.topbar {
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  padding-block: 8px;
+}
+.topbar .status-primary,
+.topbar .status-counts,
+.topbar .status-source {
+  gap: 12px;
+}
+.topbar .status-counts {
+  margin-right: auto;
+  font-variant-numeric: tabular-nums;
+}
+.status-counts b {
+  color: var(--ink);
+  margin-left: 3px;
+}
+.alarm-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 0;
+  padding: 0 4px;
+  min-height: 36px;
+  color: var(--muted);
+}
+.alarm-summary.has-alert {
+  color: #993719;
+  background: #fff2de;
+}
+.command-dock {
+  background: white;
+  border-top: 1px solid #c8d1d5;
+  padding: 12px clamp(16px, 2.4vw, 42px) max(12px, env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+.dock-heading {
+  margin-right: auto;
+}
+.dock-heading h2 {
+  font-size: 16px;
+}
+.dock-heading span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.dock-commands,
+.profile-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.dock-commands button {
+  min-width: 66px;
+}
+.profile-actions button {
+  background: #f5f6f6;
+  font-size: 12px;
+}
+.dock-station {
+  font-size: 13px;
+}
+.dock-station select {
+  padding: 0 4px;
+}
+@media (max-width: 780px) {
+  .rail {
+    border-bottom: 1px solid var(--line);
+    border-right: 0;
+  }
+  .topbar {
+    min-height: 0;
+    gap: 3px 12px;
+    padding: 5px 12px;
+    font-size: 12px;
+  }
+  .topbar .status-primary,
+  .topbar .status-counts,
+  .topbar .status-source {
+    gap: 7px;
+  }
+  .topbar .status-primary {
+    flex: 1;
+  }
+  .topbar .status-source {
+    font-size: 11px;
+  }
+  .command-dock {
+    padding: 7px 10px max(7px, env(safe-area-inset-bottom));
+    gap: 5px 8px;
+  }
+  .dock-heading h2 {
+    font-size: 14px;
+  }
+  .dock-heading span {
+    display: none;
+  }
+  .dock-commands {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .dock-commands button {
+    min-width: 0;
+    padding: 0 3px;
+    font-size: 12px;
+  }
+  .profile-actions button {
+    padding: 0 6px;
+    font-size: 11px;
+  }
+}
+@media (max-width: 480px) {
+  .dock-commands {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .topbar .status-counts {
+    margin-right: 0;
+  }
+  .alarm-summary {
+    min-height: 32px;
+  }
+}
+
+.dock-feedback {
+  display: inline-block;
+  margin-right: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+@media (max-width: 780px) {
+  .dock-feedback {
+    display: none;
+  }
 }

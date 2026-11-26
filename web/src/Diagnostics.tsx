@@ -7,6 +7,7 @@ interface DiagnosticProps {
   frame: Frame | null;
   online: boolean;
   guide: string;
+  alarms: ConsoleEvent[];
   events: ConsoleEvent[];
   action: (command: string, label?: string, primary?: boolean) => ReactNode;
 }
@@ -15,12 +16,13 @@ export function Diagnostics({
   frame,
   online,
   guide,
+  alarms,
   events,
   action,
 }: DiagnosticProps) {
   const [note, setNote] = useState('');
   const [noteError, setNoteError] = useState('');
-  const alerts = frame?.airFault || frame?.lowStock;
+  const alerts = frame?.airFault || frame?.lowStock || frame?.line.alarm;
   const state = frame?.state;
 
   async function postNote(event: React.FormEvent) {
@@ -45,6 +47,24 @@ export function Diagnostics({
       <div className="two-col">
         <section className="panel prose">
           <h2>Active conditions</h2>
+          {Boolean(frame?.line.alarm) && (
+            <div className="condition fault">
+              <b>
+                F02 #{frame!.line.occurrence} · Insert clamp extension timed out
+              </b>
+              <p>
+                {frame!.line.jammed
+                  ? 'Obstruction present'
+                  : 'Obstruction removed'}{' '}
+                ·{' '}
+                {frame!.line.alarm === 2
+                  ? 'Acknowledged'
+                  : 'Acknowledgment required'}
+              </p>
+              {action('AckClamp', 'Acknowledge occurrence')}
+              {action('ReleaseClamp', 'Remove obstruction')}
+            </div>
+          )}
           {frame?.airFault && (
             <div className="condition fault">
               <b>F01 · Supply pressure lost</b>
@@ -70,6 +90,20 @@ export function Diagnostics({
               }
             />
           )}
+          {frame?.line.enabled && !frame.manual && (
+            <p>
+              ST-03 clamp ·{' '}
+              {frame.line.clampRequest
+                ? 'Extend requested'
+                : 'Retract requested'}{' '}
+              · {frame.line.clampMm} mm ·{' '}
+              {frame.line.clampMm === 16
+                ? 'Forward limit'
+                : frame.line.clampMm === 0
+                  ? 'Home limit'
+                  : 'Travelling'}
+            </p>
+          )}
           <h3>Operator guidance</h3>
           <p>{online ? guide : 'Check the machine connection.'}</p>
           {state === 'Aborted' && action('Clear')}
@@ -80,6 +114,12 @@ export function Diagnostics({
             Exercise recovery using the virtual air supply and magazine sensor.
           </p>
           <div className="commands">
+            {frame?.line.enabled && !frame.manual && (
+              <>
+                {action('JamClamp', 'Jam insert clamp')}
+                {action('ReleaseClamp', 'Free insert clamp')}
+              </>
+            )}
             {action('DropAir')}
             {action('RestoreAir')}
             {action('LowBlanks')}
@@ -108,6 +148,30 @@ export function Diagnostics({
           {noteError && <p role="alert">{noteError}</p>}
         </form>
       </section>
+      {alarms.length > 0 && (
+        <section className="panel prose">
+          <h2>Clamp alarm history</h2>
+          {Array.from(new Set(alarms.map((e) => e.text.split(' · ')[0]))).map(
+            (id) => (
+              <details key={id} open={id === alarms[0].text.split(' · ')[0]}>
+                <summary>{id}</summary>
+                <ol>
+                  {alarms
+                    .filter((e) => e.text.startsWith(id + ' · '))
+                    .slice()
+                    .reverse()
+                    .map((e) => (
+                      <li key={e.id}>
+                        <time>{new Date(e.at).toLocaleTimeString()}</time> ·{' '}
+                        {e.text.split(' · ')[1]}
+                      </li>
+                    ))}
+                </ol>
+              </details>
+            ),
+          )}
+        </section>
+      )}
       <EventLog events={events} limit={60} />
     </>
   );

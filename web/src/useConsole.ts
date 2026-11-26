@@ -27,6 +27,7 @@ export function useConsole() {
           setData((previous) => ({
             source: previous?.source ?? 'Unknown',
             frame: previous?.frame ?? null,
+            alarms: previous?.alarms ?? [],
             events: previous?.events ?? [],
             online: false,
             pending: null,
@@ -44,14 +45,14 @@ export function useConsole() {
     };
   }, []);
 
-  const send = useCallback(async (command: string) => {
+  const send = useCallback(async (command: string, occurrence?: number) => {
     setBusy(true);
     setError('');
     try {
       const response = await fetch('/api/commands', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ command }),
+        body: JSON.stringify({ command, occurrence }),
         signal: AbortSignal.timeout(3500),
       });
       if (!response.ok)

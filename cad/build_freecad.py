@@ -8,7 +8,14 @@ import FreeCAD as App
 import Part
 from geometry import assembly, COLORS
 
-doc = App.newDocument("CartonCell")
+loop = "--loop" in sys.argv
+if loop:
+    from line_freecad import build
+    build(HERE)
+    sys.exit(0)
+
+name = "CartonCell"
+doc = App.newDocument(name)
 for item in assembly():
     x, y, z = item.center
     w, d, h = item.size
@@ -23,11 +30,13 @@ for item in assembly():
         base = App.Vector(x, y-d/2, z) if item.shape == "roller" else App.Vector(x, y, z-h/2)
     part.Label = item.name
     rotation = App.Rotation(App.Vector(1,0,0), -90) if item.shape == "roller" else App.Rotation()
-    part.Placement = App.Placement(base, rotation)
+    yaw = App.Rotation(App.Vector(0,0,1), item.yaw)
+    centre = App.Vector(x,y,z)
+    part.Placement = App.Placement(centre + yaw.multVec(base-centre), yaw.multiply(rotation))
     part.addProperty("App::PropertyString", "Finish", "Fabrication")
     part.Finish = item.material
     if part.ViewObject:
         part.ViewObject.ShapeColor = COLORS[item.material]
 doc.recompute()
-doc.saveAs(str(HERE / "CartonCell.FCStd"))
+doc.saveAs(str(HERE / (name + ".FCStd")))
 print(f"Saved {len(doc.Objects)} editable solids")

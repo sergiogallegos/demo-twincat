@@ -3,6 +3,7 @@ dist/
 bin/
 obj/
 .vs/
+*.~u
 *.tsproj.bak
 *.plcproj.bak
 *.suo
@@ -10,6 +11,9 @@ obj/
 *.tmc
 _Boot/
 _CompileInfo/
+_CompileInfo_Upload/
+*.tpy
+/debug.log
 _Libraries/
 _Deployment/
 *.blend1
@@ -24,3 +28,7 @@ labs/downloads/
 
 # Portable delivery artifact when a remote is unavailable
 *.bundle
+
+# Default local production reports
+/carton-line.sqlite3
+/carton-line.csv

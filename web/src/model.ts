@@ -26,7 +26,35 @@ export const stations = [
   },
 ];
 
+export interface LineFrame {
+  enabled: boolean;
+  precision: boolean;
+  tick: number;
+  index: number;
+  issued: number;
+  good: number;
+  rejected: number;
+  lastId: number;
+  lastFailed: number;
+  jammed: boolean;
+  occurrence: number;
+  alarm: number;
+  clampRequest: boolean;
+  clampMm: number;
+  runTicks: number;
+  plannedTicks: number;
+  idealTicks: number;
+  discarded: number;
+  products: number[];
+  checked: number[];
+  failed: number[];
+  camX: number[];
+  camZ: number[];
+  travel: number;
+  lastChecked: number;
+}
 export interface Frame {
+  line: LineFrame;
   state: string;
   manual: boolean;
   station: number;
@@ -55,6 +83,7 @@ export interface ConsoleEvent {
 }
 
 export interface Snapshot {
+  alarms?: ConsoleEvent[];
   frame: Frame | null;
   source: string;
   online: boolean;
@@ -65,6 +94,10 @@ export interface Snapshot {
 }
 
 export function instruction(frame: Frame | null): string {
+  if (frame?.line?.alarm)
+    return 'F02 · Remove the clamp obstruction and acknowledge this occurrence, then Clear and Reset.';
+  if (frame?.line?.enabled && !frame.manual && frame.state === 'Execute')
+    return 'Continuous production. Hold preserves all cartons. Stop ends this run.';
   if (!frame) return 'Waiting for the first machine snapshot.';
   if (
     frame.state === 'Complete' &&

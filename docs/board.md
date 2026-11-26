@@ -1,0 +1,23 @@
+# Carton Cell task board
+
+The portable simulator is the reference experience. Each task has an owning subsystem and acceptance evidence so a human or coding agent can take it over. Claim one open row by recording the owner and changing its state to In progress. Link the implementation and exact verification command or trace when moving it to Done. Keep controller commissioning evidence distinct from simulator and transport results.
+
+| ID | State | Owner / area | Deliverable and acceptance |
+| --- | --- | --- | --- |
+| 01 | Done | Mechanical | Original oval assembly, 8 paired-axis stations, planar table, 10 carts and 6 shuttles. FreeCAD contains 1,423 solids in 104 assemblies, including a glazed perimeter, four access doors, a corner-arm touchscreen, post controls and covered pack discharge. The matching Blender scene supplies the glTF and studio render. Five official STEP archives downloaded and hashed. [Mechanical package](mechanical.md) |
+| 02 | Done | Portable control | Continuous PackML production, 10 ms virtual scan, two recipes, synchronized X/Z cams including ST-06 flying insertion. 60,000 observed scans conserved all cartons and produced 289 good outputs after fill. [Deterministic bench](../tests/LineBench/Program.cs) |
+| 03 | Done | Inspection & diagnostics | Eight assembly confirmations, planar verification, five-sample seal check, one discharge per ID. F02 tests cover stale acknowledgment, blocked Clear, obstruction removal, and interrupted work. [HTTP acceptance](../scripts/smoke_line.py) |
+| 04 | Done | HMI | Feedback-driven plan/3D, selectable movers, equipment feedback, scope, live status on every tab, persistent bottom controls, white navigation, occurrence history and recovery. The 3D viewer includes tooling and vision close-ups. The Architecture tab traces controller ownership and migration to physical devices. [Walkthrough](media/continuous-line.webm) |
+| 05 | Done | ADS transport | Protocol 51003, 424 bytes, request sampling and echo. Static project/contract checks and a real ADS-router round trip to the synthetic peer passed. [Contract](ads.md) |
+| 06 | Done | Data & reporting | Recipe-aware performance, availability, quality and OEE. SQLite capture, event deduplication and CSV export exercised against local HTTP. [Report tool](../scripts/line_report.py) |
+| 07 | Done | Documentation & CI | Quick start, mechanical sources, OOP architecture, field commissioning exercises, screenshots, a portable simulator walkthrough and two [live ADS recordings](../README.md#watch-the-physical-plc-run-the-virtual-cell) from the physical CX. CI defines both HTTP runs and deterministic tests. |
+| 08 | Local and target PLCs running | PLC engineering | Verified HMI commands, signature 51003 and an advancing heartbeat on both runtimes. The local x64 Usermode Runtime measured 29.25–29.53 simulated cartons/min. On an x86 CX50x0, 30 good discharges took 59.953 s with zero rejects. Native alarm timestamps and field acceptance remain open. [Commissioning results](commissioning.md#observed-two-second-cycle) |
+| 09 | Planned, after 08 | Native motion / vision | Bind one cam pair to NC axes, measure following error during flying insertion, then add XTS and XPlanar routes and a TwinCAT Vision File Source. Compare the same carton traces against the simulator. [Native labs](device-labs.md) |
+| 10 | Planned, after 09 | Mechanical / field | Select orderable motor variants, track modules, end tooling, pneumatics, camera/lighting and electrical protection. Verify payload, collisions, clearance, cycle time and safeguarding before building a physical machine. |
+| 11 | Optional | Connectivity | Add PostgreSQL or MQTT/TLS for multiple consumers when needed. Keep one authorized command writer. Validate reconnect, offline buffering, duplicate suppression and configured certificate trust. |
+| 12 | Optional | Analytics & native modules | Add a read-only C++ TcCOM observer or TwinCAT ML inference lab once representative labeled traces exist. Record licensing, a baseline, prediction errors and worst-case scan time before considering control integration. |
+| 13 | Optional | Packaging | Containerize the portable host if a deployment needs it. Verify the same browser/API smoke tests in the image and expose loopback explicitly. |
+
+### Handoff
+
+Start with [AGENTS.md](../AGENTS.md), [architecture](architecture.md) and [wire contract](ads.md). Branch from the current revision for a task. Include the task ID, assumptions, changed subsystem, commands run, and any unverified target work in the PR. Field acceptance for item 08 requires a named isolated runtime and commissioning trace. An ADS symbol test alone closes only item 05.

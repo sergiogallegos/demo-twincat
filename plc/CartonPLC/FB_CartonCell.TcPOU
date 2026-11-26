@@ -3,6 +3,8 @@
   <POU Name="FB_CartonCell" Id="{52592E20-A431-4FDA-93CC-000000000026}">
     <Declaration><![CDATA[FUNCTION_BLOCK FB_CartonCell EXTENDS SPT_BaseTypes.FB_PackML_BaseModule
 VAR
+    Line : FB_ContinuousLine;
+    LineEvents : FB_LineEvents;
     Devices : FB_CellDevices;
     Stations : ARRAY[1..5] OF FB_StrokeStation;
     ActiveStation : DINT;
@@ -15,7 +17,7 @@ VAR
     RequestSample : DINT;
     Acknowledged : DINT;
     Accepted : BOOL;
-    StatusBuffer : ARRAY[0..19] OF DINT;
+    StatusBuffer : ARRAY[0..105] OF DINT;
 END_VAR]]></Declaration>
     <Implementation><ST><![CDATA[]]></ST></Implementation>
     <Method Name="Initialize" Id="{52592E20-A431-4FDA-93CC-000000000011}">
@@ -25,12 +27,18 @@ CustomModes(eMode := 4, sName := 'Manual stroke', bDisableHeld := TRUE,
     bDisableSuspended := TRUE, bEnableUnitModeChangeStopped := TRUE);
 Initialize := SUPER^.Initialize();]]></ST></Implementation>
     </Method>
+    <Method Name="RunScan" Id="{B9F992C3-0299-4AF4-A152-1426A98566B1}">
+      <Declaration><![CDATA[METHOD RunScan]]></Declaration>
+      <Implementation><ST><![CDATA[IF _InitComplete THEN
+    CyclicLogic();
+ELSE
+    _InitComplete := Initialize();
+END_IF]]></ST></Implementation>
+    </Method>
     <Method Name="CyclicLogic" Id="{52592E20-A431-4FDA-93CC-000000000012}">
       <Declaration><![CDATA[METHOD CyclicLogic]]></Declaration>
-      <Implementation><ST><![CDATA[IF NOT _InitComplete THEN
-    _InitComplete := Initialize();
-    RETURN;
-END_IF
+      <Implementation><ST><![CDATA[// SPT can call this hook while Initialize is still on the stack.
+IF NOT _InitComplete THEN RETURN; END_IF
 
 IF _CurrentState <> PreviousState THEN
     ActingScans := 0;
@@ -46,12 +54,20 @@ IF RequestSample <> Acknowledged THEN
     Acknowledged := RequestSample;
 END_IF
 
+Line.Clock((_CurrentState = Tc3_PackML_V2.E_PMLState.ePMLState_Execute) AND Line.Enabled AND (_CurrentMode = E_PMLUnitMode.ePMLUnitMode_Production));
 SUPER^.CyclicLogic();
+LineEvents(Occurrence := Line.Occurrence, Alarm := Line.Alarm, Jammed := Line.Jammed,
+    Idle := _CurrentState = Tc3_PackML_V2.E_PMLState.ePMLState_Idle);
 PublishStatus();]]></ST></Implementation>
     </Method>
     <Method Name="Execute" Id="{52592E20-A431-4FDA-93CC-000000000013}">
       <Declaration><![CDATA[METHOD PROTECTED Execute]]></Declaration>
-      <Implementation><ST><![CDATA[IF (ActiveStation < 1) OR (ActiveStation > 5) THEN RETURN; END_IF
+      <Implementation><ST><![CDATA[IF Line.Enabled AND (_CurrentMode = E_PMLUnitMode.ePMLUnitMode_Production) THEN
+    IF Line.Alarm = 0 THEN Line.Step(Devices.MissingSeal); END_IF
+    IF Line.Alarm <> 0 THEN ChangeState(Tc3_PackML_V2.E_PMLCommand.ePMLCommand_Abort); END_IF
+    RETURN;
+END_IF
+IF (ActiveStation < 1) OR (ActiveStation > 5) THEN RETURN; END_IF
 IF Finished THEN
     StateComplete();
     RETURN;
@@ -86,6 +102,7 @@ END_VAR]]></Declaration>
     Stations[StationIndex].ResetStation();
 END_FOR
 Devices.ResetDevices();
+Line.ResetLine();
 ActiveStation := 0;
 Finished := FALSE;
 IF (_CurrentState = PreviousState) AND (ActingScans >= 45) THEN
@@ -163,7 +180,8 @@ CASE Code OF
         END_IF
     E_ConsoleCommand.Start:
         IF NOT IsManual AND (_CurrentState = Tc3_PackML_V2.E_PMLState.ePMLState_Idle) THEN
-            ActiveStation := 1;
+            Line.Timing := Line.Enabled;
+            ActiveStation := SEL(Line.Enabled, 1, 0);
             ChangeState(Tc3_PackML_V2.E_PMLCommand.ePMLCommand_Start);
             ApplyCommand := TRUE;
         END_IF
@@ -194,6 +212,7 @@ CASE Code OF
             (_CurrentState <> Tc3_PackML_V2.E_PMLState.ePMLState_Aborted) AND
             (_CurrentState <> Tc3_PackML_V2.E_PMLState.ePMLState_Aborting) AND
             (_CurrentState <> Tc3_PackML_V2.E_PMLState.ePMLState_Clearing) THEN
+            Line.Timing := FALSE;
             ChangeState(Tc3_PackML_V2.E_PMLCommand.ePMLCommand_Stop);
             ApplyCommand := TRUE;
         END_IF
@@ -205,13 +224,15 @@ CASE Code OF
             ApplyCommand := TRUE;
         END_IF
     E_ConsoleCommand.Clear:
-        IF NOT AirFault AND (_CurrentState = Tc3_PackML_V2.E_PMLState.ePMLState_Aborted) THEN
+        IF NOT AirFault AND ((Line.Alarm = 0) OR ((Line.Alarm = 2) AND NOT Line.Jammed)) AND (_CurrentState = Tc3_PackML_V2.E_PMLState.ePMLState_Aborted) THEN
+            Line.ClearAlarm();
             ChangeState(Tc3_PackML_V2.E_PMLCommand.ePMLCommand_Clear);
             ApplyCommand := TRUE;
         END_IF
     E_ConsoleCommand.Manual, E_ConsoleCommand.Automatic:
         IF _CurrentState = Tc3_PackML_V2.E_PMLState.ePMLState_Stopped THEN
             IF (Code = E_ConsoleCommand.Manual) AND NOT IsManual THEN
+                Line.Timing := FALSE;
                 ChangeMode(E_PMLUnitMode.ePMLUnitMode_UserMode1);
                 ApplyCommand := TRUE;
             ELSIF (Code = E_ConsoleCommand.Automatic) AND IsManual THEN
@@ -243,6 +264,28 @@ CASE Code OF
     E_ConsoleCommand.RestoreSeal:
         ApplyCommand := Devices.MissingSeal;
         Devices.MissingSeal := FALSE;
+    E_ConsoleCommand.LoopLine, E_ConsoleCommand.Bench:
+        IF NOT IsManual AND (_CurrentState = Tc3_PackML_V2.E_PMLState.ePMLState_Stopped) THEN
+            ApplyCommand := Line.Enabled <> (Code = E_ConsoleCommand.LoopLine);
+            Line.Timing := FALSE;
+            Line.Enabled := Code = E_ConsoleCommand.LoopLine;
+        END_IF
+    E_ConsoleCommand.Standard, E_ConsoleCommand.Precision:
+        IF Line.Enabled AND NOT IsManual AND (_CurrentState = Tc3_PackML_V2.E_PMLState.ePMLState_Stopped) THEN
+            ApplyCommand := Line.Precision <> (Code = E_ConsoleCommand.Precision);
+            Line.Precision := Code = E_ConsoleCommand.Precision;
+        END_IF
+    E_ConsoleCommand.JamClamp:
+        IF Line.Enabled AND NOT IsManual AND NOT Line.Jammed AND (Line.Alarm = 0) THEN
+            Line.Jammed := TRUE; ApplyCommand := TRUE;
+        END_IF
+    E_ConsoleCommand.ReleaseClamp:
+        ApplyCommand := Line.Jammed; Line.Jammed := FALSE;
+    E_ConsoleCommand.AckClamp:
+        IF (_CurrentState = Tc3_PackML_V2.E_PMLState.ePMLState_Aborted) AND
+            (Line.Alarm = 1) AND (RequestSample / 256 = Line.Occurrence) THEN
+            Line.AcknowledgeAlarm(); ApplyCommand := TRUE;
+        END_IF
     E_ConsoleCommand.Refill:
         ApplyCommand := LowStock;
         LowStock := FALSE;
@@ -250,7 +293,7 @@ END_CASE]]></ST></Implementation>
     </Method>
     <Method Name="PublishStatus" Id="{52592E20-A431-4FDA-93CC-000000000025}">
       <Declaration><![CDATA[METHOD PRIVATE PublishStatus]]></Declaration>
-      <Implementation><ST><![CDATA[StatusBuffer[0] := 51002;
+      <Implementation><ST><![CDATA[StatusBuffer[0] := 51003;
 StatusBuffer[1] := TO_DINT(_CurrentState);
 StatusBuffer[2] := BOOL_TO_DINT(_CurrentMode = E_PMLUnitMode.ePMLUnitMode_UserMode1);
 StatusBuffer[3] := ActiveStation;
@@ -265,6 +308,7 @@ StatusBuffer[8] := Acknowledged;
 StatusBuffer[9] := (StatusBuffer[9] MOD 2000000000) + 1;
 StatusBuffer[10] := BOOL_TO_DINT(Accepted);
 Devices.Publish(StatusBuffer);
+Line.Publish(StatusBuffer);
 GVL_HMI.Status := StatusBuffer;]]></ST></Implementation>
     </Method>
   </POU>

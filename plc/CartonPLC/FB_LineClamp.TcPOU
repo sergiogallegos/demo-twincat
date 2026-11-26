@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <POU Name="FB_LineClamp" Id="{CB31703C-BDF0-4A15-AF15-000000000006}">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_LineClamp IMPLEMENTS I_LineClamp
+VAR_INPUT
+    Jammed : BOOL;
+END_VAR
+VAR
+    Position : DINT;
+END_VAR]]></Declaration>
+    <Implementation><ST><![CDATA[]]></ST></Implementation>
+    <Method Name="Follow" Id="{CB31703C-BDF0-4A15-AF15-000000000004}">
+      <Declaration><![CDATA[METHOD Follow : DINT
+VAR_INPUT
+    Extend : BOOL;
+END_VAR]]></Declaration>
+      <Implementation><ST><![CDATA[IF NOT Extend THEN Position := MAX(0, Position - 4);
+ELSIF NOT Jammed THEN Position := MIN(16, Position + 4);
+END_IF
+Follow := Position;]]></ST></Implementation>
+    </Method>
+    <Method Name="Home" Id="{CB31703C-BDF0-4A15-AF15-000000000005}">
+      <Declaration><![CDATA[METHOD Home]]></Declaration>
+      <Implementation><ST><![CDATA[Position := 0;]]></ST></Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

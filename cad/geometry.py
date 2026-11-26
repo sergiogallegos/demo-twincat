@@ -19,6 +19,7 @@ class PartSpec:
     shape: str
     center: tuple
     size: tuple
+    yaw: float = 0.0
 
 def assembly():
     parts = []
@@ -120,3 +121,32 @@ def assembly():
     for layer in range(7):
         box(f"Stock_{layer}","kraft",(-1356,0,735+layer*8),(145,200,6))
     return parts
+
+# Continuous line uses profiled solids. Layout coordinates are millimetres, Z up.
+def loop_assembly():
+    from line_components import LineBuilder
+    from enclosure import add_enclosure, operator_station, pack_out
+    line = LineBuilder()
+    line.base("MainFrame", 0, 0, 2390, 1390)
+    # Overhang supports the perimeter outside the planar tiles. The inside
+    # corner follows the edge of the main tooling plate with a 2 mm joint.
+    planar_deck = ((-2460,190),(-1197,190),(-1197,697),(-1030,697),
+                   (-1030,1202),(-1050,1222),(-2460,1222),(-2480,1202),(-2480,210))
+    line.base("PlanarFrame", -1760, 720, 1200, 800, deck_outline=planar_deck)
+    line.track()
+    for station in range(8):
+        line.station(station)
+    line.insert_clamp()
+    line.supply()
+    line.finishing_table()
+    line.services()
+    add_enclosure(line)
+    operator_station(line)
+    pack_out(line)
+    for index, (x, y, yaw) in enumerate([
+        (-750,-320,0), (-250,-320,0), (250,-320,0), (750,-320,0), (1070,0,90),
+        (750,320,180), (250,320,180), (-250,320,180), (-750,320,180), (-1070,0,270),
+        (-1320,480,0), (-1760,480,0), (-2200,480,0), (-2200,960,0), (-1760,960,0), (-1320,960,0)
+    ]):
+        line.carrier(index, x, y, yaw)
+    return line

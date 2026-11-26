@@ -1,16 +1,50 @@
-<?xml version="1.0" encoding="utf-8"?>
-<TcSmProject TcSmVersion="1.0" TcVersion="3.1.4024.53">
-  <Project ProjectGUID="{52592E20-A431-4FDA-93CC-000000000001}" Target64Bit="true">
-    <System><Tasks><Task Id="3" Priority="20" CycleTime="100000" AmsPort="350" AdtTasks="true"><Name>PlcTask</Name></Task></Tasks></System>
-    <Plc>
-      <Project GUID="{52592E20-A431-4FDA-93CC-000000000002}" Name="CartonPLC" PrjFilePath="CartonPLC\CartonPLC.plcproj" TmcFilePath="CartonPLC\CartonPLC.tmc" ReloadTmc="true" AmsPort="851" CopyTmcToTarget="true" SymbolicMapping="true">
-        <Instance Id="#x08502000" TcSmClass="TComPlcObjDef" TmcPath="CartonPLC\CartonPLC.tmc">
-          <Name>CartonPLC Instance</Name>
-          <CLSID ClassFactory="TcPlc30">{08500001-0000-0000-F000-000000000064}</CLSID>
-          <Contexts><Context><Id>0</Id><Name>PlcTask</Name><ManualConfig><OTCID>#x02010030</OTCID></ManualConfig><Priority>20</Priority><CycleTime>10000000</CycleTime></Context></Contexts>
-          <TaskPouOids><TaskPouOid Prio="20" OTCID="#x08502001" /></TaskPouOids>
-        </Instance>
-      </Project>
-    </Plc>
-  </Project>
+<?xml version="1.0"?>
+<TcSmProject xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.beckhoff.com/schemas/2012/07/TcSmProject" TcSmVersion="1.0" TcVersion="3.1.4026.28">
+	<DataTypes>
+		<DataType>
+			<Name GUID="{903BB98D-BCCE-4750-B189-961F00E2BBD9}" PersistentType="true">CartonLine</Name>
+			<DisplayName TxtId=""><![CDATA[Carton assembly line]]></DisplayName>
+			<EventId>
+				<Name Id="1">ClampTimeout</Name>
+				<DisplayName TxtId=""><![CDATA[ST-03 insert clamp extend timeout, occurrence {0}]]></DisplayName>
+				<Severity>Error</Severity>
+			</EventId>
+			<EventId>
+				<Name Id="2">LineRecovered</Name>
+				<DisplayName TxtId=""><![CDATA[Carton line reset after occurrence {0}]]></DisplayName>
+				<Severity>Info</Severity>
+			</EventId>
+		</DataType>
+	</DataTypes>
+	<Project ProjectGUID="{52592E20-A431-4FDA-93CC-000000000001}" Target64Bit="true" ShowHideConfigurations="#x6">
+		<System>
+			<Tasks>
+				<Task Id="3" Priority="20" CycleTime="100000" AmsPort="350" AdtTasks="true">
+					<Name>PlcTask</Name>
+				</Task>
+			</Tasks>
+		</System>
+		<Plc>
+			<Project GUID="{52592E20-A431-4FDA-93CC-000000000002}" Name="CartonPLC" PrjFilePath="CartonPLC\CartonPLC.plcproj" TmcFilePath="CartonPLC\CartonPLC.tmc" ReloadTmc="true" AmsPort="851" CopyTmcToTarget="true" SymbolicMapping="true">
+				<Instance Id="#x08502000" TcSmClass="TComPlcObjDef" TmcHash="{4A414278-A028-72AC-8C90-B0F2BF524133}" TmcPath="CartonPLC\CartonPLC.tmc">
+					<Name>CartonPLC Instance</Name>
+					<CLSID ClassFactory="TcPlc30">{08500001-0000-0000-F000-000000000064}</CLSID>
+					<Contexts>
+						<Context>
+							<Id>0</Id>
+							<Name>PlcTask</Name>
+							<ManualConfig>
+								<OTCID>#x02010030</OTCID>
+							</ManualConfig>
+							<Priority>20</Priority>
+							<CycleTime>10000000</CycleTime>
+						</Context>
+					</Contexts>
+					<TaskPouOids>
+						<TaskPouOid Prio="20" OTCID="#x08502001"/>
+					</TaskPouOids>
+				</Instance>
+			</Project>
+		</Plc>
+	</Project>
 </TcSmProject>

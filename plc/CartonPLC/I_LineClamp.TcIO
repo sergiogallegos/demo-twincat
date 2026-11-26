@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1">
+  <Itf Name="I_LineClamp" Id="{CB31703C-BDF0-4A15-AF15-000000000003}">
+    <Declaration><![CDATA[INTERFACE I_LineClamp]]></Declaration>
+    <Method Name="Follow" Id="{CB31703C-BDF0-4A15-AF15-000000000001}">
+      <Declaration><![CDATA[METHOD Follow : DINT
+VAR_INPUT
+    Extend : BOOL;
+END_VAR]]></Declaration>
+    </Method>
+    <Method Name="Home" Id="{CB31703C-BDF0-4A15-AF15-000000000002}">
+      <Declaration><![CDATA[METHOD Home]]></Declaration>
+    </Method>
+  </Itf>
+</TcPlcObject>
