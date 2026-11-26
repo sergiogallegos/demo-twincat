@@ -182,20 +182,6 @@ function App() {
                     </button>
                   </div>
                   <MachineView frame={frame} reset={reset} />
-                  <div className="viewport-footer">
-                    <span>
-                      <i className="swatch blue-swatch" />
-                      Cylinder body
-                    </span>
-                    <span>
-                      <i className="swatch amber-swatch" />
-                      Stroke tool
-                    </span>
-                    <span>
-                      <i className="swatch kraft-swatch" />
-                      Carton
-                    </span>
-                  </div>
                 </section>
                 <MachineControls
                   {...{ frame, allowed, busy, online, guide, send, action }}

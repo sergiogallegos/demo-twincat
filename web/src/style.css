@@ -863,3 +863,86 @@ code {
     grid-template-columns: 1fr;
   }
 }
+.drive-marker {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  color: #164d73;
+}
+.drive-marker i {
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #126896;
+  box-shadow: 0 0 0 2px white;
+}
+.drive-marker b {
+  position: absolute;
+  left: -8px;
+  bottom: 18px;
+  background: #fff;
+  color: #153a51;
+  font:
+    600 12px/1.3 'Segoe UI',
+    sans-serif;
+  white-space: nowrap;
+  border: 1px solid #b5cbd9;
+  border-radius: 4px;
+  padding: 3px 7px;
+  box-shadow: 0 1px 4px #15384c22;
+}
+.drive-marker::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  bottom: 0;
+  height: 20px;
+  width: 2px;
+  background: #45728f;
+}
+.drive-marker-0 b,
+.drive-marker-2 b {
+  top: 19px;
+  bottom: auto;
+}
+.drive-marker-2 b {
+  left: auto;
+  right: -8px;
+}
+.drive-marker-0::before,
+.drive-marker-2::before {
+  top: 0;
+  bottom: auto;
+}
+.drive-views {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border-top: 1px solid var(--line);
+}
+.drive-views button {
+  padding: 9px 10px;
+  min-height: 54px;
+  border: 0;
+  border-radius: 0;
+  display: grid;
+  text-align: left;
+  gap: 3px;
+  font-weight: 400;
+}
+.drive-views button strong {
+  font-size: 14px;
+  color: var(--blue);
+}
+.drive-views button span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.drive-views button[aria-pressed='true'] {
+  background: #e4eef9;
+  box-shadow: inset 0 -3px var(--blue);
+}

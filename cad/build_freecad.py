@@ -18,10 +18,12 @@ for item in assembly():
         base = App.Vector(x - w/2, y - d/2, z - h/2)
     else:
         part = doc.addObject("Part::Cylinder", "Part")
-        part.Radius, part.Height = w/2, h
-        base = App.Vector(x, y, z-h/2)
+        part.Radius = w/2
+        part.Height = d if item.shape == "roller" else h
+        base = App.Vector(x, y-d/2, z) if item.shape == "roller" else App.Vector(x, y, z-h/2)
     part.Label = item.name
-    part.Placement = App.Placement(base, App.Rotation())
+    rotation = App.Rotation(App.Vector(1,0,0), -90) if item.shape == "roller" else App.Rotation()
+    part.Placement = App.Placement(base, rotation)
     part.addProperty("App::PropertyString", "Finish", "Fabrication")
     part.Finish = item.material
     if part.ViewObject:

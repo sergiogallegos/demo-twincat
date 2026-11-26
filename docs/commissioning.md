@@ -49,6 +49,21 @@ With a freshly started **C# simulator**, run `python scripts/smoke.py` from anot
 
 ## Troubleshooting
 
+### XAE reports “The application which this project type is based on was not found”
+
+The GUID `B1E792BE-AA5F-4E3C-8C82-674BF9C0715B` identifies the Beckhoff TwinCAT system project loader for `.tsproj` files. The IDE needs that loader before it can read the PLC or resolve SPT references.
+
+1. Start the **TwinCAT XAE Shell** that has TwinCAT PLC engineering integrated. Select **File → Open → Project/Solution** and open `plc\CartonCell.sln`. On a machine with the integration in the 32-bit shell, run the following from the repository root.
+
+   ```powershell
+   & "${env:ProgramFiles(x86)}\Beckhoff\TcXaeShell\Common7\IDE\TcXaeShell.exe" (Resolve-Path .\plc\CartonCell.sln).Path
+   ```
+
+2. If the same error persists, open **File → New → Project** in that shell and search for **TwinCAT XAE Project**. If the template is missing, check the TwinCAT XAE engineering installation. On build 4026, open **TwinCAT Package Manager → Settings → Integration**, select the shell you intend to use, save and reopen the IDE. [Beckhoff integration instructions](https://infosys.beckhoff.com/content/1033/tc3_installation/20646416267.html)
+3. Confirm that the Solution Explorer expands to **CartonCell → PLC → CartonPLC**. Then resolve any library references using the commissioning steps above.
+
+### Simulation and commissioning symptoms
+
 | Symptom | Check |
 | --- | --- |
 | Root URL is blank or returns 404 | Build the frontend and check that `server/wwwroot/index.html` exists. Open the HTTP URL, not the HTML file on disk. |

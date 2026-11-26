@@ -30,7 +30,11 @@ for part in assembly():
         bpy.context.object.dimensions = dims
         bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
     else:
-        bpy.ops.mesh.primitive_cylinder_add(vertices=20, radius=dims[0]/2, depth=dims[2], location=center)
+        roller = part.shape == "roller"
+        bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=dims[0]/2,
+            depth=dims[1] if roller else dims[2], location=center,
+            rotation=(math.pi/2 if roller else 0, 0, 0))
+        bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
     obj = bpy.context.object
     obj.name = part.name
     obj.data.materials.append(materials[part.material])

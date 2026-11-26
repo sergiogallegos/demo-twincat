@@ -27,26 +27,29 @@ def assembly():
     def round_z(name, material, center, diameter, height):
         parts.append(PartSpec(name, material, "cylinder", center, (diameter, diameter, height)))
 
+    def round_y(name, material, center, diameter, length):
+        parts.append(PartSpec(name, material, "roller", center, (diameter, length, diameter)))
+
     for side in (-1, 1):
         y = side * 240
         for level in (220, 680):
             box(f"Rail_{side}_{level}", "anodized", (0, y, level), (2910, 48, 72))
             box(f"Slot_{side}_{level}", "graphite", (0, y+side*25, level), (2890, 3, 7))
-        box(f"Guide_{side}", "steel", (0, side*165, 755), (2830, 12, 18))
+        box(f"Guide_{side}", "steel", (-210, side*165, 755), (2410, 12, 18))
         for i,x in enumerate((-1330, 0, 1330)):
             box(f"Leg_{side}_{i}", "anodized", (x,y,373), (55,55,619))
             box(f"LegSlot_{side}_{i}", "graphite", (x,y+side*28,373), (7,2,600))
             round_z(f"Foot_{side}_{i}", "rubber", (x,y,36), 90, 32)
-    box("TransferBed","belt",(0,0,707),(2860,451,26))
+    box("TransferBed","belt",(-215,0,699),(2430,451,26))
     for i,x in enumerate(CENTRES):
         tag=f"S{i+1}"
         box(tag+"_CrossTie","steel",(x,0,223),(42,451,56))
         for side in (-1,1):
-            y=side*215
+            y=side*(282 if i == 4 else 215)
             box(f"{tag}_Upright_{side}","anodized",(x,y,950),(40,40,468))
             box(f"{tag}_Slot_{side}","graphite",(x,y+side*21,950),(6,2,443))
             box(f"{tag}_Mount_{side}","graphite",(x,y,731),(74,74,18))
-        box(tag+"_Gantry","steel",(x,0,1180),(76,471,38))
+        box(tag+"_Gantry","steel",(x,0,1180),(76,604 if i == 4 else 471,38))
         box(tag+"_Cylinder","blue",(x,0,1225),(72,72,128))
         for top in (1167,1290):
             box(f"{tag}_Cap_{top}","graphite",(x,0,top),(85,85,16))
@@ -80,20 +83,40 @@ def assembly():
         box(f"FormDieEnd_{side}", "graphite", (-560+side*131, 0, 759), (26, 177, 75))
         box(f"LoaderGuide_{side}", "anodized", (side*87, 96, 972), (14, 184, 240))
         box(f"FlapShoe_{side}", "blue", (560, side*99, 839), (232, 26, 17))
-        box(f"OutfeedFence_{side}", "anodized", (1302, side*100, 767), (240, 14, 80))
     box("LoaderShelf", "graphite", (0, 142, 864), (190, 148, 18))
     for level in range(3):
         box(f"LoaderStock_{level}", "product", (0, 144, 897+level*58), (143, 92, 50))
     # Mounting-point origins are also used for the optional vendor STEP detail layer.
-    box("FeedServo", "graphite", (-1270, -279, 720), (138, 72, 72))
-    round_z("FeedRoll", "anodized", (-1250, -143, 744), 75, 44)
-    box("TrackCarrier", "blue", (-1120, 0, 725), (220, 167, 10))
-    box("TrackStator", "steel", (0, -198, 754), (2620, 32, 56))
+    # Feed motor, mounting flange and transverse roller share a shaft centreline.
+    box("FeedServo", "graphite", (-1250, -345, 750), (74, 140, 74))
+    box("MotorFlange", "anodized", (-1250, -269, 750), (96, 12, 96))
+    box("MotorConnector", "graphite", (-1250, -382, 795), (34, 42, 19))
+    for i in range(5):
+        box(f"MotorFin_{i}", "steel", (-1288, -390+i*20, 750), (6, 6, 61))
+    round_y("FeedRoll", "anodized", (-1250, -135, 750), 50, 249)
+    box("FeedRollKey", "blue", (-1250, -135, 774), (9, 237, 4))
+
+    # The linear motor modules are visible on the operator side of the frame.
+    box("TrackStator", "graphite", (0, -274, 645), (2480, 50, 105))
+    for i in range(10):
+        box(f"TrackModule_{i}", "anodized", (-1116+248*i, -302, 645), (240, 16, 72))
+    for height in (608, 680):
+        box(f"TrackGuide_{height}", "steel", (0, -314, height), (2480, 15, 12))
+    box("TrackCarrier", "blue", (-1120, -330, 657), (134, 48, 91))
+    box("CarrierArm", "steel", (-1120, -168, 714), (76, 328, 13))
+    box("CarrierPallet", "blue", (-1120, 0, 725), (210, 158, 10))
     box("SealCamera", "graphite", (560, 129, 1065), (55, 59, 72))
     round_z("CameraLens", "rubber", (560, 129, 1010), 44, 44)
     box("CameraBracket", "anodized", (560, 170, 1109), (46, 116, 16))
-    box("PlanarTile", "graphite", (1260, 0, 681), (490, 446, 46))
-    box("PlanarShuttle", "blue", (1120, 0, 726), (188, 160, 12))
+    # Four independently visible tile faces span the XY travel envelope.
+    for column, x in enumerate((1120, 1360)):
+        for row, y in enumerate((-120, 120)):
+            name = "PlanarTile" if column == row == 0 else f"PlanarTile_{column}_{row}"
+            box(name, "graphite", (x, y, 680), (236, 236, 65))
+            for corner in (-1, 1):
+                round_z(f"TileFastener_{column}_{row}_{corner}", "steel",
+                        (x+corner*102, y+corner*102, 713), 9, 3)
+    box("PlanarShuttle", "blue", (1120, 0, 724), (140, 140, 14))
     for layer in range(7):
         box(f"Stock_{layer}","kraft",(-1356,0,735+layer*8),(145,200,6))
     return parts

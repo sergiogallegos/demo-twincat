@@ -73,6 +73,7 @@ Open [the local operator console](http://127.0.0.1:5080). Verify **Connected · 
 
 | Exercise | What to do and observe |
 | --- | --- |
+| Locate the motion devices | Under **Overview → Machine simulation**, select **Feed servo** at the blank infeed, **XTS mover** on the front rail or **XPlanar shuttle** on the discharge tiles. Each button follows its device and shows its reported position. **Reset view** returns to the complete machine. |
 | Hold or suspend | During Execute, select **Hold** or **Suspend**. Check the highlighted branch on **PackML states**. Resume or Unsuspend continues the interrupted stroke. |
 | Manual control | Select **Stop**, wait for Stopped, switch to **Manual** and reset. Select a station and **Single stroke**. Only its cylinder moves. |
 | Inspect and sort | In Diagnostics select **Remove seal** before the next cycle. In **Device labs**, observe Reject, zero bright samples and Y −120 mm. Restore the seal for the next carton. |
@@ -84,6 +85,8 @@ For automated checks, start a fresh simulator, then run `python scripts/verify_c
 ## TwinCAT and native device labs
 
 Open [CartonCell.sln](plc/CartonCell.sln) in XAE. The [commissioning guide](docs/commissioning.md) covers the pinned SPT checkout, library registration, XAR test target, TC1200 runtime, ADS route and startup sequence. The [native device labs](docs/device-labs.md) cover simulated NC axes, XTS, XPlanar mover feedback and a camera-free Vision File Source. They also include the workflow for five optional Beckhoff STEP components.
+
+If the IDE reports an unsupported project type when opening the solution, follow the [XAE Shell troubleshooting steps](docs/commissioning.md#xae-reports-the-application-which-this-project-type-is-based-on-was-not-found).
 
 ## Screenshots
 
@@ -125,4 +128,3 @@ Open [CartonCell.sln](plc/CartonCell.sln) in XAE. The [commissioning guide](docs
 [**Watch or download the 76-second captioned walkthrough (MP4)**](docs/media/carton-cell-demo.mp4). The recording follows an automatic cycle, a PackML hold, the accept and reject lanes, an air-pressure fault and the engineering guide. It uses the running C# simulation and web HMI.
 
 [![Open the Carton Cell demonstration video](docs/images/machine-overview.png)](docs/media/carton-cell-demo.mp4)
-# demo-twincat
