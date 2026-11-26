@@ -16,12 +16,13 @@ In the main Carton Cell solution, the XAE project tree contains the PLC task and
 
 ### Watch the physical PLC run the virtual cell
 
-Both clips were recorded from the React HMI while CartonPLC ran on a physical Beckhoff CX50x0. The C# service read live feedback over ADS. A separate timed run counted 30 good simulated cartons at final discharge in 59.953 seconds. [Commissioning results](docs/commissioning.md#observed-two-second-cycle)
+All three clips show the React HMI while CartonPLC runs on a physical Beckhoff CX50x0. The C# service reads live feedback over ADS. A separate timed run counted 30 good simulated cartons at final discharge in 59.953 seconds. [Commissioning results](docs/commissioning.md#observed-two-second-cycle)
 
-| Clip | Screenshots from the same run |
+| Clip | Views and screenshots |
 | --- | --- |
 | [Production and inspection · 19 s, MP4](docs/media/cx-production.mp4) | [Carton flow and counters](docs/images/cx-production.png) · [Assembly feedback](docs/images/cx-assembly.png) · [Planar inspection](docs/images/cx-planar.png) |
 | [3D machine tour · 20 s, MP4](docs/media/cx-machine-tour.mp4) | [Guarded cell](docs/images/cx-guarded-cell.png) · [Insert tooling cutaway](docs/images/cx-insert-tooling.png) |
+| [Operator walkthrough · 26 s, MP4](docs/media/cx-operator-walkthrough.mp4) | 3D Overview → PackML states → Diagnostics → 3D Overview |
 
 ## Why build the cell before buying hardware?
 
