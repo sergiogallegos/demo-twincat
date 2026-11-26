@@ -54,6 +54,7 @@ public record Frame(CellState State, bool Manual, int Station, int Phase, int Ca
 
 public interface IMachine : IDisposable
 {
+    string Source { get; }
     Frame Read();
     void Write(int request);
 }

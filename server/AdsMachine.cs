@@ -4,6 +4,8 @@ namespace CartonCell;
 
 public sealed class AdsMachine(IConfiguration configuration) : IMachine
 {
+    public string Source => "Ads";
+
     private AdsClient? client;
     private uint statusHandle;
     private uint requestHandle;

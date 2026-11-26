@@ -3,6 +3,8 @@ namespace CartonCell;
 /// <summary>A portable, 10 ms teaching model of the PLC's virtual mechanism.</summary>
 public sealed class SimulatedMachine : IMachine
 {
+    public string Source => "Simulation";
+
     private readonly TimeProvider clock;
     private readonly long started;
 

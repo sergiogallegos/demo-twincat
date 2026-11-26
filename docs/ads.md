@@ -74,11 +74,11 @@ For example, sequence 1 plus command 1 is decimal 257. Reset is sent as `257`. A
 
 ## Verify the transport locally
 
-With a running TwinCAT ADS router, execute `dotnet run --project tests/AdsLoopback`. The test registers its own local server at port 58051 and connects through the real ADS client. It exercises symbolic handle acquisition, an 424-byte status read, signed positions, an atomic command write, acknowledgment and reconnect. The test target owns two synthetic symbols for the duration of the test. PLC port 851 remains a separate commissioning target.
+With a running TwinCAT ADS router, execute `dotnet run --project tests/AdsLoopback`. The test registers its own local server at port 58051 and connects through the real ADS client. It exercises symbolic handle acquisition, a 424-byte status read, signed positions, an atomic command write, acknowledgment and reconnect. The test target owns two synthetic symbols for the duration of the test. PLC port 851 remains a separate commissioning target.
 
 ## HTTP interface
 
-* `GET /api/machine` returns the source, connection status, frame, available commands, pending request and newest-first event history. It also includes the service session UUID, a separate F02 occurrence history and the typed continuous-line frame.
+* `GET /api/machine` returns the active adapter's source (`Simulation` or `Ads`), connection status, frame, available commands, pending request and newest-first event history. The source label is independent of the capitalization used at startup. The response also includes the service session UUID, a separate F02 occurrence history and the typed continuous-line frame.
 * `POST /api/commands` accepts JSON such as `{"command":"Reset"}`. A 202 means submitted. A 409 means the request conflicts with the sampled state or another pending command. A 503 means the selected source is unavailable.
 * `POST /api/messages` accepts `{"text":"Magazine refilled"}`. Messages contain 1–200 characters after trimming and remain in the host session.
 

@@ -18,4 +18,4 @@ For the continuous line, trace one carton in the [architecture guide](architectu
 
 ## Verification boundary
 
-The portable C# plant and HTTP interface have repeatable functional checks, including both sorter lanes. The engineering objects, ADS word layout and native model assets have structural checks. The native servo and XTS projects and Vision File Source setup require their matching installed functions. XAE compilation, PLC runtime commissioning and native motion/vision feedback must also be verified on the chosen TwinCAT installation.
+The portable C# plant and HTTP interface have repeatable functional checks, including both sorter lanes. The ADS loopback test checks symbol access, command acknowledgment and reconnect. CartonPLC also ran on a local x64 TwinCAT Usermode Runtime and on a physical x86 Beckhoff CX50x0. On the CX, the HMI observed 30 good simulated cartons in 59.953 seconds after the line filled. Following error on physical axes, camera performance and native alarm timestamps remain open commissioning items. [Commissioning results](commissioning.md#observed-two-second-cycle) · [Task board](board.md)

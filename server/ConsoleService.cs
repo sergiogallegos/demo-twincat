@@ -4,7 +4,7 @@ namespace CartonCell;
 
 public record ConsoleEvent(long Id, DateTimeOffset At, string Kind, string Text);
 
-public sealed class ConsoleService(IMachine machine, IConfiguration config, ILogger<ConsoleService> logger)
+public sealed class ConsoleService(IMachine machine, ILogger<ConsoleService> logger)
     : BackgroundService
 {
     private readonly object gate = new();
@@ -150,7 +150,7 @@ public sealed class ConsoleService(IMachine machine, IConfiguration config, ILog
             {
                 session,
                 alarms = alarmHistory.Reverse().ToArray(),
-                source = config["Machine:Source"],
+                source = machine.Source,
                 online,
                 issue,
                 pending,

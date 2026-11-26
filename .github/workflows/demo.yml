@@ -24,7 +24,7 @@ jobs:
       - name: Exercise the service and machine
         shell: bash
         run: |
-          dotnet run --project server --no-build > "$RUNNER_TEMP/carton.log" 2>&1 &
+          dotnet run --project server --no-build -- --Machine:Source=simulation > "$RUNNER_TEMP/carton.log" 2>&1 &
           host_pid=$!
           trap 'kill "$host_pid" 2>/dev/null || true' EXIT
           for i in {1..50}; do

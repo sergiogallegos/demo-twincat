@@ -6,6 +6,7 @@ obj/
 *.~u
 *.tsproj.bak
 *.plcproj.bak
+/plc/UpgradeLog*.htm
 *.suo
 *.user
 *.tmc
