@@ -23,8 +23,6 @@ Both clips were recorded from the React HMI while CartonPLC ran on a physical Be
 | [Production and inspection · 19 s, MP4](docs/media/cx-production.mp4) | [Carton flow and counters](docs/images/cx-production.png) · [Assembly feedback](docs/images/cx-assembly.png) · [Planar inspection](docs/images/cx-planar.png) |
 | [3D machine tour · 20 s, MP4](docs/media/cx-machine-tour.mp4) | [Guarded cell](docs/images/cx-guarded-cell.png) · [Insert tooling cutaway](docs/images/cx-insert-tooling.png) |
 
-The portable simulator walkthrough also shows clamp fault injection and operator recovery. [Watch the walkthrough](docs/media/continuous-line.webm) · [Inspect the alarm](docs/images/continuous-line-alarm.png) · [Trace the architecture](docs/images/continuous-line-architecture.png) · [View the CAD render](web/public/continuous-line.png)
-
 ## Why build the cell before buying hardware?
 
 Can the machine keep track of a carton through assembly, inspection and a handoff while other cartons stay in motion? This personal project brings together machine-building experience, industrial controls and software architecture to test that question on a laptop. To see the design in action, follow one carton ID to discharge. Then jam the insert clamp and observe which object detects the missing feedback, which layer requests a PackML abort and how the operator recovers.
@@ -80,7 +78,7 @@ Open [the operator console](http://127.0.0.1:5080). In HMI-only mode the header 
 | Simulate a missing seal | In Diagnostics select **Remove seal**. Cartons inspected at the planar camera carry the failure through final packing. Restore the fixture and observe subsequent good cartons. |
 | Jam a clamp | Select **Jam insert clamp**. On a demanded ST-03 extension, F02 trips after 150 ms of missing feedback. Acknowledge that occurrence and remove the obstruction, then Clear and Reset. |
 | Change recipe | Stop, select **Precision**, Reset, Run. The pitch stays at 2 s and the Z stroke increases from 40 to 48 mm. The production totals survive the change. |
-| Exercise one station | While Stopped select **Single-carton bench** or **Manual bench**. The older five-station model, manual strokes and PackML Complete path are available here. [Bench walkthrough](docs/media/carton-cell-demo.mp4) |
+| Exercise one station | While Stopped select **Single-carton bench** or **Manual bench**. The older five-station model, manual strokes and PackML Complete path are available here. [Bench commissioning exercises](docs/commissioning.md#single-carton-bench-acceptance) |
 | Export a report | Run `python scripts/line_report.py --seconds 30` against the local service. Open the resulting CSV or query the SQLite samples and events. |
 
 ## Control and motion

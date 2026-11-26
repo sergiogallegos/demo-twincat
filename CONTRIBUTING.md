@@ -34,4 +34,4 @@ Use the [continuous CAD rebuild instructions](docs/mechanical.md#regenerate-the-
 
 ## Publishing media
 
-The [continuous-line walkthrough](docs/media/continuous-line.webm) shows the live header, bottom command dock, transport, flying cam, planar handoff, and clamp recovery. The [76-second MP4](docs/media/carton-cell-demo.mp4) covers the older single-carton bench. Full-resolution PNGs for the README and social posts are in [docs/images](docs/images). Capture the Overview during loading, the PackML diagram during a hold, and Diagnostics after a simulated pressure loss. Capture PLC source from the current function block and identify the method in the image. Keep local computer names and target addresses out of public captures.
+The [README gallery](README.md#watch-the-physical-plc-run-the-virtual-cell) contains the current CX recordings and screenshots. When refreshing them, capture the live HMI with the connection source, PackML state and carton counts visible. Keep local computer names and target addresses out of public captures.
