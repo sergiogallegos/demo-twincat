@@ -38,7 +38,7 @@ Run `python scripts/fetch_step.py` from the root. The downloader extracts the or
 | XPlanar mover | 6 | [APM4220-0000-0000](https://download.beckhoff.com/download/technical_drawings/Drive_Technology/step/xplanar/apm4220-0000-0000.stp.zip) |
 | Seal camera | 1 | [VCS20xx camera family](https://download.beckhoff.com/download/technical_drawings/vision/vcs2000/vcs20xx.stp.zip) |
 
-AM8021 and VCS20xx describe family drawings. Final order suffixes depend on the chosen drive, feedback, lens and installation. Beckhoff describes the supported XTS gearing/cam functions and physical tile/mover combinations. The ATS SuperTrak GEN3 is an industrial reference for the oval layout. [Beckhoff XTS](https://www.beckhoff.com/en-en/products/motion/xts-linear-product-transport/) · [XPlanar operating instructions](https://download.beckhoff.com/download/document/motion/xplanar_ba_en.pdf) · [ATS SuperTrak GEN3](https://supertrakconveyance.com/wp-content/uploads/sites/27/2024/06/EC-DOI-ATS-SuperTrak-GEN3-System-2024June.pdf)
+AM8021 and VCS20xx describe family drawings. Final order suffixes depend on the chosen drive, feedback, lens and installation. Beckhoff describes the supported XTS gearing/cam functions and physical tile/mover combinations. [Beckhoff XTS](https://www.beckhoff.com/en-en/products/motion/xts-linear-product-transport/) · [XPlanar operating instructions](https://download.beckhoff.com/download/document/motion/xplanar_ba_en.pdf)
 
 ## Regenerate the assets
 

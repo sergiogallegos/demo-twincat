@@ -23,8 +23,8 @@ This optional procedure is for testing the PLC application and its ADS interface
    ```
 
 3. Open [CartonCell.sln](../plc/CartonCell.sln) in TwinCAT XAE. Open **PLC → Library Repository → Edit Locations → Add** and select the cloned **Library Repository** directory. Resolve **SPT Base Types 3.9.0**, **SPT Event Logger 3.9.0**, **Tc3_EventLogger** and **Tc3_PackML_V2** in the PLC Reference Manager. TwinCAT must also resolve their standard system dependencies. [SPT library installation](https://github.com/Beckhoff-USA-Community/SPT-Libraries)
-4. Choose the local engineering runtime or an isolated Beckhoff test PLC. Build the solution and inspect the Errors window. The system task is 10 ms, PLC port 851, with no mapped field outputs. Activate the configuration **only on the intended test target**, log in, download and run the PLC. Activation can interrupt the selected runtime.
-5. For a remote target, establish the trusted ADS route between HMI host and PLC in TwinCAT. Record the target’s six-field AMS Net ID and runtime port. For a runtime on this PC, read the local target’s AMS Net ID in XAE. A separate Usermode Runtime can have its own Net ID. In an online watch check `GVL_HMI.Status[0] = 51003` and confirm that index 9 advances.
+4. For a remote PLC, establish the trusted ADS route between the HMI host and the test PLC. In XAE, select the intended local or remote runtime and its platform. Record its six-field AMS Net ID and PLC port (851 for this project). A separate Usermode Runtime can have its own Net ID.
+5. Build the solution and inspect the Errors window. The system task runs every 10 ms and the project has no mapped field outputs. Activate the configuration on the selected test target, log in, download and run CartonPLC. Activation can interrupt that runtime. In an online watch, verify `GVL_HMI.Status[0] = 51003` and confirm that index 9 advances.
 6. Stop any C# simulator occupying port 5080. From the repo root, launch the same application in ADS mode using PowerShell. Substitute your test target's Net ID as appropriate.
 
    ```powershell
@@ -34,13 +34,13 @@ This optional procedure is for testing the PLC application and its ADS interface
    dotnet run --project server
    ```
 
-7. Open the console and verify **Connected · ADS · PLC**. SPT normally powers up in Aborted. With the virtual pressure fault clear, select **Clear abort**, wait for Stopped, then **Reset cell → Start cycle**. Observe the same state and phase in the PLC watch and HMI. To return to the portable simulator, stop the host, set `$env:Machine__Source = 'Simulation'` and restart it.
+7. Open the console and verify **Connected · ADS · PLC** in the header. On first startup, if the PLC shows **Aborted** and the virtual pressure fault is clear, select **Clear abort** and wait for **Stopped**. With **Continuous line** shown in the bottom **Machine controls**, select **Reset cell**, wait for **Idle**, then select **Run line**. Confirm **Execute** in the HMI and the PLC watch. To return to the portable simulator, stop the host, set `$env:Machine__Source = 'Simulation'` and restart it.
 
 ## Continuous-line acceptance
 
 The top header follows the selected machine on every HMI page. It shows the PackML state, operating mode, connection source, alert status, and packed/rejected counts. Use the bottom command dock to operate the unit. Only the center page scrolls. The ADS and portable sources use the same controls.
 
-1. Begin in Automatic / Stopped with **Continuous line** selected. Select Standard, Reset and Run. Wait until the pipeline fills. Observe ten XTS and six planar mover IDs, several simultaneous cartons and one new discharge every two seconds during uninterrupted Execute (30/min).
+1. Begin in Automatic / Stopped with **Continuous line** selected. With the Standard recipe selected, press **Reset cell**, wait for **Idle**, then press **Run line**. Wait until the pipeline fills. Observe ten XTS and six planar mover IDs, several simultaneous cartons and one new discharge every two seconds during uninterrupted Execute (30/min).
 2. Select a mover on the plan. Compare its carton ID and inspection mask before and after handoff. At final discharge a good carton has check mask 0x3FF and failure mask 0. At all times, issued = packed + rejected + reset discards + occupied movers.
 3. Hold during transport. Compare master tick, index, carton IDs and axis feedback across successive reads. Resume. Repeat with Suspend / Unsuspend. Observe ST-06 X tracking at 1:1 gearing during the insertion window in the servo scope.
 4. Remove the seal. A carton arriving at planar vision takes bit 9 in its fail mask. Restore the seal. Previously inspected work retains its verdict.

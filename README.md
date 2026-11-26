@@ -1,8 +1,8 @@
 # Carton Cell
 
-Carton Cell is a hardware-free proof of concept by **Sergio Gallegos** for learning TwinCAT machine-control architecture, SPT/PackML sequencing, ADS communication and operator diagnostics. **Every HMI command operates on a software model. Direct control of physical equipment is outside the scope of this project.**
+Carton Cell is a virtual carton assembly and packaging machine by **Sergio Gallegos**. Its TwinCAT PLC code has been tested on a physical Beckhoff CX50x0. The PLC controls the sequence, tracks each carton and reports inspection results to the web HMI over ADS. The complete demo can also run on a PC.
 
-The model represents ten XTS carts, eight pick-and-place stations with paired servo axes, and six XPlanar movers for inspection and final packing. A separate five-station bench supports single-carton and manual exercises.
+The machine model simulates ten XTS carts, eight pick-and-place stations with paired servo axes, and six XPlanar movers for inspection and final packing. All HMI commands operate these virtual mechanisms. A separate five-station bench supports single-carton and manual exercises.
 
 | Test mode | Machine source | What runs |
 | --- | --- | --- |
@@ -27,7 +27,7 @@ Both clips were recorded from the React HMI while CartonPLC ran on a physical Be
 
 Can the machine keep track of a carton through assembly, inspection and a handoff while other cartons stay in motion? This personal project brings together machine-building experience, industrial controls and software architecture to test that question on a laptop. To see the design in action, follow one carton ID to discharge. Then jam the insert clamp and observe which object detects the missing feedback, which layer requests a PackML abort and how the operator recovers.
 
-The **Architecture** tab traces a command from React and TypeScript through ASP.NET Core, compares the portable plant with the TwinCAT ADS.NET path, and explains how the Structured Text function blocks collaborate. Its hardware migration view identifies the configuration, devices and measurements needed for physical commissioning. OpenAI Codex assisted with implementation, debugging, test automation and documentation. Engineering judgment governs the requirements, design choices and interpretation of the results.
+The **Architecture** tab traces a command from React and TypeScript through ASP.NET Core, compares the portable plant with the TwinCAT ADS.NET path, and explains how the Structured Text function blocks collaborate. Its hardware migration view identifies the configuration, devices and measurements needed for physical commissioning. Codex assisted with implementation, debugging, test automation and documentation. Engineering judgment governs the requirements, design choices and interpretation of the results.
 
 The portable demo runs without a TwinCAT installation. For the separate PC-based TwinCAT exercises, basic PLC engineering is free, and many TwinCAT functions offer renewable seven-day trial licenses for engineering and laboratory use. Check the selected function and target when preparing a lab. [Beckhoff engineering licensing](https://infosys.beckhoff.com/content/1033/tc3_licensing/179888523.html) · [Beckhoff TwinCAT licensing](https://www.beckhoff.com/en-en/products/automation/twincat/twincat-3-licensing/)
 
@@ -70,7 +70,13 @@ Run one host on port 5080 at a time. Stop your previous host with Ctrl+C when sw
 
 ### Exercise the cell
 
-Open [the operator console](http://127.0.0.1:5080). In HMI-only mode the header reads **Connected · Local simulation**. Select **Reset cell**, wait for **Idle**, then **Run line**. In Standard the first output arrives after about 23 seconds of Execute. Once the line fills, the production target is one good carton every two seconds (30/min) during uninterrupted Execute. Measured output rates for the portable simulator and local TwinCAT runtime are in the [commissioning results](docs/commissioning.md#observed-two-second-cycle). Select a mover to see its carton ID and inspection masks. Select **3D** to orbit the guarded cell. **Operator panel** frames the suspended touchscreen, its corner mount and the local post controls. **Insert tooling** and **Vision table** use a cutaway to expose the moving mechanisms. Use **Cutaway** to switch the guarding layer in any camera view. Switch to **Device labs** to read all eight axis pairs or the six planar mover coordinates. The live status header and machine controls stay visible across tabs. The C# service keeps the plant running when the browser closes.
+Open [the operator console](http://127.0.0.1:5080) and check the PackML state in the header. The default profile is **Continuous line**.
+
+1. A fresh simulator starts in **Stopped**. If a freshly started PLC shows **Aborted**, select **Clear abort** in the bottom **Machine controls** and wait for **Stopped**.
+2. From **Stopped**, select **Reset cell** and wait for **Idle**.
+3. Select **Run line** and confirm the header reaches **Execute**. With the Standard recipe, the first packed carton appears after about 23 seconds. Once the line fills, the target is one good carton every two seconds. [Measured results for all three modes](docs/commissioning.md#observed-two-second-cycle)
+
+Select a mover to see its carton ID and inspection masks. Select **3D** to orbit the guarded cell. **Operator panel** frames the suspended touchscreen, its corner mount and the local post controls. **Insert tooling** and **Vision table** use a cutaway to expose the moving mechanisms. Use **Cutaway** to switch the guarding layer in any camera view. Switch to **Device labs** to read all eight axis pairs or the six planar mover coordinates. The live status header and machine controls stay visible across tabs. Closing the browser leaves the selected machine source running.
 
 | Try it | What to observe |
 | --- | --- |

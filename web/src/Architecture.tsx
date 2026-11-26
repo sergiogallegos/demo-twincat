@@ -239,9 +239,9 @@ export function Architecture() {
           holds the solid assembly and Blender supplies the browser model.
         </p>
         <p>
-          OpenAI Codex assisted with implementation, debugging, test automation
-          and documentation. The engineer owns design choices, reviews the
-          evidence and determines what needs physical validation.
+          Codex assisted with implementation, debugging, test automation and
+          documentation. The engineer owns design choices, reviews the evidence
+          and determines what needs physical validation.
         </p>
       </section>
     </div>
